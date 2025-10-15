@@ -5,7 +5,7 @@ import { initOSDFabricJS } from 'openseadragon-fabric';
 
 
 
-const MapDrawingViewer = ({ imageUrl = 'https://openseadragon.github.io/example-images/highsmith/highsmith.dzi' }) => {
+const MapDrawingViewer = ({ imageUrl = null }) => {
   const viewerRef = useRef(null);
   const [viewer, setViewer] = useState(null);
   const [fabricOverlay, setFabricOverlay] = useState(null);
@@ -19,10 +19,14 @@ const MapDrawingViewer = ({ imageUrl = 'https://openseadragon.github.io/example-
     // Initialize the fabric plugin before creating viewers
     initOSDFabricJS();
 
-    // Create OpenSeadragon viewer
+    // Create OpenSeadragon viewer with map tiles
     const osdViewer = OpenSeadragon({
       element: viewerRef.current,
-      tileSources: imageUrl,
+      tileSources: imageUrl || {
+        type: 'openstreetmaps',
+        maxZoom: 49,
+        minZoom: 0,
+      },
       showNavigator: true,
       navigatorPosition: 'TOP_RIGHT',
       showRotationControl: true,
@@ -47,7 +51,7 @@ const MapDrawingViewer = ({ imageUrl = 'https://openseadragon.github.io/example-
       });
 
       const canvas = overlay.fabricCanvas();
-      
+
       // Configure fabric canvas selection appearance
       fabric.Object.prototype.set({
         borderColor: '#22a2f8',
@@ -55,6 +59,64 @@ const MapDrawingViewer = ({ imageUrl = 'https://openseadragon.github.io/example-
         cornerColor: 'white',
         cornerSize: 10,
         transparentCorners: false,
+      });
+
+      // Handle mouse events to control map navigation
+      canvas.on('mouse:down', (e) => {
+        if (selectedTool === 'select' || e.target) {
+          // Disable map navigation when in select mode or clicking on an object
+          osdViewer.setMouseNavEnabled(false);
+        }
+      });
+
+      canvas.on('mouse:move', (e) => {
+        if (selectedTool === 'select' && e.target) {
+          // Keep map navigation disabled while dragging objects
+          osdViewer.setMouseNavEnabled(false);
+        }
+      });
+
+      canvas.on('mouse:up', (e) => {
+        // Re-enable map navigation after object interaction
+        if (selectedTool !== 'draw') {
+          setTimeout(() => {
+            osdViewer.setMouseNavEnabled(true);
+          }, 100);
+        }
+      });
+
+      canvas.on('selection:created', () => {
+        osdViewer.setMouseNavEnabled(false);
+      });
+
+      canvas.on('selection:updated', () => {
+        osdViewer.setMouseNavEnabled(false);
+      });
+
+      canvas.on('selection:cleared', () => {
+        if (selectedTool !== 'draw') {
+          osdViewer.setMouseNavEnabled(true);
+        }
+      });
+
+      canvas.on('object:moving', () => {
+        osdViewer.setMouseNavEnabled(false);
+      });
+
+      canvas.on('object:scaling', () => {
+        osdViewer.setMouseNavEnabled(false);
+      });
+
+      canvas.on('object:rotating', () => {
+        osdViewer.setMouseNavEnabled(false);
+      });
+
+      canvas.on('object:modified', () => {
+        setTimeout(() => {
+          if (selectedTool !== 'draw') {
+            osdViewer.setMouseNavEnabled(true);
+          }
+        }, 100);
       });
 
       setViewer(osdViewer);
@@ -84,16 +146,19 @@ const MapDrawingViewer = ({ imageUrl = 'https://openseadragon.github.io/example-
     if (!fabricCanvas || !viewer) return;
 
     setSelectedTool(tool);
-    
-    // Reset drawing mode
+
+    // Reset drawing mode and enable map navigation by default
     fabricCanvas.isDrawingMode = false;
+    fabricCanvas.selection = false;
     viewer.setMouseNavEnabled(true);
 
     switch (tool) {
       case 'select':
         fabricCanvas.selection = true;
+        // Disable map navigation when in select mode
+        viewer.setMouseNavEnabled(false);
         break;
-        
+
       case 'draw':
         setIsDrawingMode(true);
         fabricCanvas.isDrawingMode = true;
@@ -103,19 +168,19 @@ const MapDrawingViewer = ({ imageUrl = 'https://openseadragon.github.io/example-
         // Disable OpenSeadragon mouse navigation for drawing
         viewer.setMouseNavEnabled(false);
         break;
-        
+
       case 'rectangle':
         addRectangle();
         break;
-        
+
       case 'circle':
         addCircle();
         break;
-        
+
       case 'text':
         addText();
         break;
-        
+
       default:
         break;
     }
