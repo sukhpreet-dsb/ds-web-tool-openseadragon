@@ -48,7 +48,7 @@ export function zoomToMapCenter(center: Position, osdViewer: OpenSeadragon.Viewe
 
     // Pan to the calculated location and zoom to appropriate level
     osdViewer.viewport.panTo(coordinates.viewport);
-    osdViewer.viewport.zoomTo(350); // Good zoom level for fiber optic network viewing
+    osdViewer.viewport.zoomTo(3500); // Good zoom level for fiber optic network viewing
 
     // Verify the result
     setTimeout(() => {

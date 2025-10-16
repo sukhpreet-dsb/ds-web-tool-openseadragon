@@ -8,13 +8,16 @@ import OpenSeadragon from "openseadragon";
 export function createOpenSeadragonViewer(containerElement: HTMLElement) {
   return OpenSeadragon({
     element: containerElement,
-    showNavigator: false,
     wrapHorizontal: true,
     zoomPerScroll: 1.2,
     minZoomImageRatio: 0.5,
-    tileSources: [{
-      type: 'openstreetmaps'
-    }]
+    tileSources: [
+      {
+        type: "openstreetmaps",
+      },
+    ],
+    zoomInButton: "zoom-in-btn",
+    zoomOutButton: "zoom-out-btn",
   });
 }
 
