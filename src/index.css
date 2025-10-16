@@ -2,36 +2,6 @@
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
-* {
-  margin: 0px;
-  padding: 0px;
-  box-sizing: border-box;
-}
-/* MapDrawingViewer.css */
-.map-drawing-container {
-  font-family: Arial, sans-serif;
-}
-
-.toolbar button {
-  border: 1px solid #ccc;
-  background: white;
-  cursor: pointer;
-  border-radius: 3px;
-  padding: 5px 10px;
-  margin-right: 5px;
-  transition: all 0.2s;
-}
-
-.toolbar button:hover {
-  background: #f0f0f0;
-  border-color: #999;
-}
-
-.toolbar button.active {
-  background: #007bff;
-  color: white;
-  border-color: #0056b3;
-}
 
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);

@@ -11,11 +11,16 @@ export function createOpenSeadragonViewer(containerElement: HTMLElement) {
     wrapHorizontal: true,
     zoomPerScroll: 1.2,
     minZoomImageRatio: 0.5,
+    showRotationControl: true,
     tileSources: [
       {
         type: "openstreetmaps",
       },
     ],
+    gestureSettingsMouse: {
+      flickEnabled: true,
+      clickToZoom: false,
+    },
     zoomInButton: "zoom-in-btn",
     zoomOutButton: "zoom-out-btn",
   });

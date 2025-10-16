@@ -69,7 +69,7 @@ export function createLineStringFabricObject(
   return new fabric.Polyline(points, {
     fill: 'transparent',
     stroke: 'red',
-    strokeWidth: 20,
+    strokeWidth: 10,
     selectable: true,
     data: { properties, type: 'LineString' }
   });
