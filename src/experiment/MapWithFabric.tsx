@@ -26,7 +26,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Menu, Minus, MousePointer2 } from "lucide-react";
+import { HandGrab, Menu, Minus, MousePointer2, Type } from "lucide-react";
 
 const cleanGeoJson = fixGeoJsonCoordinateTypes(
   geojson as unknown as FeatureCollection
@@ -86,7 +86,10 @@ const MapWithFabric = () => {
   }, []);
 
   // Helper function to set up canvas event handlers
-  const setupCanvasEventHandlers = (canvas:fabric.Canvas, osdViewer:OpenSeadragon.Viewer) => {
+  const setupCanvasEventHandlers = (
+    canvas: fabric.Canvas,
+    osdViewer: OpenSeadragon.Viewer
+  ) => {
     // Mouse down event
     canvas.on("mouse:down", (e) => {
       if (selectedTool === "select" || e.target) {
@@ -180,13 +183,12 @@ const MapWithFabric = () => {
 
   return (
     <div
-      className="map-drawing-container"
-      style={{ width: "100%", height: "100vh", position: "relative" }}
+      className="w-full h-screen relative"
     >
       {/* Viewer Container */}
       <div
         ref={viewerRef}
-        style={{ width: "100%", height: "100%", background: "#000" }}
+        className="w-full h-full bg-[#000]"
       />
       <div className="absolute left-2 top-2">
         <DropdownMenu
@@ -205,17 +207,14 @@ const MapWithFabric = () => {
             onInteractOutside={(e) => e.preventDefault()}
             onPointerDown={(e) => e.preventDefault()}
           >
-            <DropdownMenuLabel>Tools</DropdownMenuLabel>
-            <DropdownMenuGroup>
+            <DropdownMenuLabel className="px-3">Tools</DropdownMenuLabel>
+            <DropdownMenuGroup className="my-2 px-3">
               <div className="grid grid-cols-2 gap-4">
                 <DropdownMenuItem
-                  onSelect={(e) => {
-                    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-                    e.preventDefault(), setSelectedTool("line");
-                  }}
+                  onSelect={(e) => e.preventDefault()}
                   className={`w-full cursor-pointer ${
                     selectedTool === "line" ? "bg-[#e0dfff]" : ""
-                  } hover:bg-[#e0dfff] delay-75 transition-all flex justify-center border border-[#8d89fa]`}
+                  } hover:bg-[#e0dfff] focus:bg-[#e0dfff] delay-75 transition-all flex justify-center`}
                   onClick={() => handleToolChange("line")}
                 >
                   <Minus />
@@ -224,10 +223,30 @@ const MapWithFabric = () => {
                   onSelect={(e) => e.preventDefault()}
                   className={`w-full cursor-pointer ${
                     selectedTool === "select" ? "bg-[#e0dfff]" : ""
-                  } hover:bg-[#e0dfff] delay-75 transition-all flex justify-center border border-[#8d89fa]`}
+                  } hover:bg-[#e0dfff] focus:bg-[#e0dfff] delay-75 transition-all flex justify-center`}
                   onClick={() => handleToolChange("select")}
                 >
                   <MousePointer2 />
+                </DropdownMenuItem>
+              </div>
+              <div className="grid grid-cols-2 gap-4 mt-2">
+                <DropdownMenuItem
+                  onSelect={(e) => e.preventDefault()}
+                  className={`w-full cursor-pointer ${
+                    selectedTool === "text" ? "bg-[#e0dfff]" : ""
+                  } hover:bg-[#e0dfff] focus:bg-[#e0dfff] delay-75 transition-all flex justify-center`}
+                  onClick={() => handleToolChange("text")}
+                >
+                  <Type />
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={(e) => e.preventDefault()}
+                  className={`w-full cursor-pointer ${
+                    selectedTool === "hand" ? "bg-[#e0dfff]" : ""
+                  } hover:bg-[#e0dfff] focus:bg-[#e0dfff] delay-75 transition-all flex justify-center`}
+                  onClick={() => handleToolChange("hand")}
+                >
+                  <HandGrab />
                 </DropdownMenuItem>
               </div>
             </DropdownMenuGroup>

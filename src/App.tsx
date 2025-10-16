@@ -1,11 +1,7 @@
-import './App.css'
-import MapWithFabric from './experiment/MapWithFabric'
+import MapWithFabric from "./experiment/MapWithFabric";
 
 function App() {
-
-  return (
-      <MapWithFabric />
-  )
+  return <MapWithFabric />;
 }
 
-export default App
+export default App;

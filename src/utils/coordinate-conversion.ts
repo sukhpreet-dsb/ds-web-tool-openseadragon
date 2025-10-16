@@ -8,25 +8,38 @@ import type { Position } from "../types";
  * @param osdViewer - OpenSeadragon viewer instance
  * @returns Object containing pixel, viewport, and image coordinates
  */
-export function convertLngLatToOsdCoordinates(lng: number, lat: number, osdViewer: OpenSeadragon.Viewer) {
+export function convertLngLatToOsdCoordinates(
+  lng: number,
+  lat: number,
+  osdViewer: OpenSeadragon.Viewer
+) {
   const highZoomLevel = 18;
   const highWorldSize = Math.pow(2, highZoomLevel) * 256;
 
   // Convert lat/lng to pixel coordinates at high zoom level
   const pixelX = ((lng + 180) / 360) * highWorldSize;
-  const pixelY = ((1 - Math.log(Math.tan((lat * Math.PI) / 180) + 1 / Math.cos((lat * Math.PI) / 180)) / Math.PI) / 2) * highWorldSize;
+  const pixelY =
+    ((1 -
+      Math.log(
+        Math.tan((lat * Math.PI) / 180) + 1 / Math.cos((lat * Math.PI) / 180)
+      ) /
+        Math.PI) /
+      2) *
+    highWorldSize;
 
   // Convert pixel coordinates to viewport coordinates
   const pixelPoint = new OpenSeadragon.Point(pixelX, pixelY);
-  const viewportPoint = osdViewer.viewport.imageToViewportCoordinates(pixelPoint);
+  const viewportPoint =
+    osdViewer.viewport.imageToViewportCoordinates(pixelPoint);
 
   // Convert viewport coordinates to image coordinates (for fabric positioning)
-  const imagePoint = osdViewer.viewport.viewportToImageCoordinates(viewportPoint);
+  const imagePoint =
+    osdViewer.viewport.viewportToImageCoordinates(viewportPoint);
 
   return {
     pixel: pixelPoint,
     viewport: viewportPoint,
-    image: imagePoint
+    image: imagePoint,
   };
 }
 
@@ -35,7 +48,10 @@ export function convertLngLatToOsdCoordinates(lng: number, lat: number, osdViewe
  * @param center - Center coordinates [lng, lat]
  * @param osdViewer - OpenSeadragon viewer instance
  */
-export function zoomToMapCenter(center: Position, osdViewer: OpenSeadragon.Viewer) {
+export function zoomToMapCenter(
+  center: Position,
+  osdViewer: OpenSeadragon.Viewer
+) {
   if (!center || center.length !== 2) return;
 
   const [lng, lat] = center;
@@ -58,7 +74,7 @@ export function zoomToMapCenter(center: Position, osdViewer: OpenSeadragon.Viewe
         center: newCenter,
         zoom: newZoom,
         target: coordinates.viewport,
-        originalLngLat: { lng, lat }
+        originalLngLat: { lng, lat },
       });
 
       // Check if we're in the right area
@@ -68,10 +84,12 @@ export function zoomToMapCenter(center: Position, osdViewer: OpenSeadragon.Viewe
       if (deltaX < 0.01 && deltaY < 0.01) {
         console.log("✅ Successfully positioned to coordinates!");
       } else {
-        console.warn("⚠️ Position may not be accurate. Delta:", { deltaX, deltaY });
+        console.warn("⚠️ Position may not be accurate. Delta:", {
+          deltaX,
+          deltaY,
+        });
       }
     }, 1000);
-
   } catch (error) {
     console.error("Error zooming to center:", error);
     // Fallback: just zoom to a reasonable level

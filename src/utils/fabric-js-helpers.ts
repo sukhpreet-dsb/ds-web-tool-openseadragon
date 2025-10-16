@@ -41,11 +41,11 @@ export function createPointFabricObject(
     left: fabricCoords.image.x - 5,
     top: fabricCoords.image.y - 5,
     radius: 5,
-    fill: 'rgba(0, 123, 255, 0.8)',
-    stroke: '#0056b3',
+    fill: "rgba(0, 123, 255, 0.8)",
+    stroke: "#0056b3",
     strokeWidth: 1,
     selectable: true,
-    data: { properties, type: 'Point' }
+    data: { properties, type: "Point" },
   });
 }
 
@@ -67,11 +67,11 @@ export function createLineStringFabricObject(
   });
 
   return new fabric.Polyline(points, {
-    fill: 'transparent',
-    stroke: 'red',
+    fill: "transparent",
+    stroke: "red",
     strokeWidth: 10,
     selectable: true,
-    data: { properties, type: 'LineString' }
+    data: { properties, type: "LineString" },
   });
 }
 
@@ -92,17 +92,28 @@ export function drawGeoJsonFeatures(
     try {
       let fabricObject: fabric.Object;
 
-      if (feature.geometry.type === 'Point') {
-        fabricObject = createPointFabricObject(feature.geometry.coordinates, feature.properties, osdViewer);
-      } else if (feature.geometry.type === 'LineString') {
-        fabricObject = createLineStringFabricObject(feature.geometry.coordinates, feature.properties, osdViewer);
+      if (feature.geometry.type === "Point") {
+        fabricObject = createPointFabricObject(
+          feature.geometry.coordinates,
+          feature.properties,
+          osdViewer
+        );
+      } else if (feature.geometry.type === "LineString") {
+        fabricObject = createLineStringFabricObject(
+          feature.geometry.coordinates,
+          feature.properties,
+          osdViewer
+        );
       } else {
         console.warn(`Unsupported geometry type: ${feature?.geometry}`);
         return;
       }
 
       canvas.add(fabricObject);
-      console.log(`Added ${feature.geometry.type} feature ${index + 1}:`, feature.properties);
+      console.log(
+        `Added ${feature.geometry.type} feature ${index + 1}:`,
+        feature.properties
+      );
     } catch (error) {
       console.error(`Error drawing feature ${index + 1}:`, error);
     }
