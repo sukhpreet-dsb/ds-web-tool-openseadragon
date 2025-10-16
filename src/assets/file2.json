@@ -1,0 +1,8 @@
+{
+"type": "FeatureCollection",
+"name": "OFC_2_4_2025",
+"features": [
+{ "type": "Feature", "properties": { "Name": "0277BG061J065", "FID": 0, "Field_1": "0277BG061J065", "ROW": "GP", "Ring_ID": "B", "Shape_Leng": 1783.025647, "Span_ID": "ADAMPUR_Ring-B-9", "end_node": "J065", "name2": "0277BG061J065", "num_fibre": 24, "phase": 1, "seg_length": 1783.025531, "start_node": "G061", "type": "INCREMENTAL" }, "geometry": { "type": "LineString", "coordinates": [ [ 75.6708189, 31.4140654 ], [ 75.6709993, 31.4140613 ], [ 75.6709501, 31.4137566 ], [ 75.6709537, 31.4136431 ], [ 75.670957, 31.413509 ], [ 75.67024, 31.41318 ], [ 75.671379, 31.411699 ], [ 75.672452, 31.410183 ], [ 75.67338, 31.40854 ], [ 75.67454, 31.40743 ], [ 75.67455, 31.40491 ], [ 75.67454, 31.40485 ], [ 75.67451, 31.40391 ], [ 75.67488, 31.40222 ], [ 75.67503, 31.40181 ], [ 75.675346, 31.400537 ], [ 75.67531, 31.40048 ], [ 75.67464, 31.40001 ], [ 75.6746059, 31.399988 ] ] } },
+{ "type": "Feature", "properties": { "Name": "0277BG061J065", "FID": 1, "Field_1": "0277BG061J065", "ROW": "GP", "Ring_ID": "B", "Shape_Leng": 89.669076, "Span_ID": "ADAMPUR_Ring-B-9", "end_node": "J065", "name2": "0277BG061J065", "num_fibre": 24, "phase": 1, "seg_length": 1783.025531, "start_node": "G061", "type": "INCREMENTAL" }, "geometry": { "type": "LineString", "coordinates": [ [ 75.6746059, 31.399988 ], [ 75.6751157, 31.3994077 ], [ 75.6750963, 31.399327 ] ] } }
+]
+}

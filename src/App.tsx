@@ -1,12 +1,10 @@
 import './App.css'
-import MapDrawingViewer from './experiment/MapDrawingViewer'
+import MapWithFabric from './experiment/MapWithFabric'
 
 function App() {
 
   return (
-    <>
-      <MapDrawingViewer />
-    </>
+      <MapWithFabric />
   )
 }
 
