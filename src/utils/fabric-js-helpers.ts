@@ -44,7 +44,7 @@ export function createPointFabricObject(
     fill: "rgba(0, 123, 255, 0.8)",
     stroke: "#0056b3",
     strokeWidth: 1,
-    selectable: true,
+    selectable: false,
     data: { properties, type: "Point" },
   });
 }
@@ -70,7 +70,7 @@ export function createLineStringFabricObject(
     fill: "transparent",
     stroke: "red",
     strokeWidth: 10,
-    selectable: true,
+    selectable: false,
     data: { properties, type: "LineString" },
   });
 }

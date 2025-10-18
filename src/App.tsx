@@ -1,4 +1,4 @@
-import MapWithFabric from "./experiment/MapWithFabric";
+import MapWithFabric from "./pages/MapWithFabric";
 
 function App() {
   return <MapWithFabric />;
