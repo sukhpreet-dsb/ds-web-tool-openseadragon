@@ -1,4 +1,4 @@
-import { HandGrab, Minus, MousePointer2, Type } from 'lucide-react';
+import { HandGrab, Minus, MousePointer2, Type, GitBranch } from 'lucide-react';
 import type { ToolType } from '../store/toolStore';
 
 export interface ToolConfig {
@@ -27,9 +27,16 @@ export const TOOLS: ToolConfig[] = [
   {
     id: 'line',
     name: 'Line',
+    icon: GitBranch,
+    description: 'Click to start, click again to finish',
+    shortcut: 'L',
+  },
+  {
+    id: 'freehand',
+    name: 'Freehand',
     icon: Minus,
     description: 'Draw freehand lines',
-    shortcut: 'L',
+    shortcut: 'F',
   },
   {
     id: 'text',

@@ -2,16 +2,22 @@ import { create } from 'zustand';
 import * as fabric from 'fabric';
 import type { CTX } from '@/contexts/MapContext';
 
-export type ToolType = 'select' | 'line' | 'text' | 'hand' | '';
+export type ToolType = 'select' | 'line' | 'freehand' | 'text' | 'hand' | '';
 
 export interface ToolState {
   selectedTool: ToolType;
   isDrawingMode: boolean;
+  isDrawingLine: boolean;
+  currentLine?: fabric.Line;
+  lineStartPoint?: { x: number; y: number };
 }
 
 export interface ToolActions {
   setSelectedTool: (tool: ToolType) => void;
   setIsDrawingMode: (enabled: boolean) => void;
+  setIsDrawingLine: (drawing: boolean) => void;
+  setCurrentLine: (line?: fabric.Line) => void;
+  setLineStartPoint: (point?: { x: number; y: number }) => void;
   resetTool: (ctx: CTX) => void;
   activateTool: (ctx: CTX, tool: ToolType,) => void;
 }
@@ -22,11 +28,20 @@ export const useToolStore = create<ToolStore>((set, get) => ({
   // State
   selectedTool: 'hand',
   isDrawingMode: false,
+  isDrawingLine: false,
+  currentLine: undefined,
+  lineStartPoint: undefined,
 
   // Actions
   setSelectedTool: (tool) => set({ selectedTool: tool }),
 
   setIsDrawingMode: (enabled) => set({ isDrawingMode: enabled }),
+
+  setIsDrawingLine: (drawing) => set({ isDrawingLine: drawing }),
+
+  setCurrentLine: (line) => set({ currentLine: line }),
+
+  setLineStartPoint: (point) => set({ lineStartPoint: point }),
 
   resetTool: (ctx) => {
     const { fabricCanvas, viewer } = ctx;
@@ -43,6 +58,9 @@ export const useToolStore = create<ToolStore>((set, get) => ({
     set({
       selectedTool: 'hand',
       isDrawingMode: false,
+      isDrawingLine: false,
+      currentLine: undefined,
+      lineStartPoint: undefined,
     });
   },
 
@@ -64,12 +82,17 @@ export const useToolStore = create<ToolStore>((set, get) => ({
         viewer.setMouseNavEnabled(false);
         break;
 
-      case 'line':
+      case 'freehand':
         set({ isDrawingMode: true });
         fabricCanvas.isDrawingMode = true;
         fabricCanvas.freeDrawingBrush = new fabric.PencilBrush(fabricCanvas);
         fabricCanvas.freeDrawingBrush.width = 5;
         fabricCanvas.freeDrawingBrush.color = 'black';
+        viewer.setMouseNavEnabled(false);
+        break;
+
+      case 'line':
+        // Line tool will be handled by mouse events
         viewer.setMouseNavEnabled(false);
         break;
 

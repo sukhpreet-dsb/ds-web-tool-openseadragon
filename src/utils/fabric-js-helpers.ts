@@ -6,6 +6,9 @@ import { convertLngLatToOsdCoordinates } from "./coordinate-conversion";
 export const CANVAS_OPTIONS: fabric.TOptions<fabric.CanvasOptions> = {
   selection: true,
   preserveObjectStacking: true,
+  targetFindTolerance: 5,
+  allowTouchScrolling: false,
+  imageSmoothingEnabled: true,
 };
 
 /**
@@ -45,6 +48,8 @@ export function createPointFabricObject(
     stroke: "#0056b3",
     strokeWidth: 1,
     selectable: false,
+    evented: false,
+    perPixelTargetFind: false,
     data: { properties, type: "Point" },
   });
 }
@@ -71,6 +76,9 @@ export function createLineStringFabricObject(
     stroke: "red",
     strokeWidth: 10,
     selectable: false,
+    evented: false,
+    perPixelTargetFind: false,
+    excludeFromExport: false,
     data: { properties, type: "LineString" },
   });
 }
@@ -86,7 +94,7 @@ export function drawGeoJsonFeatures(
   osdViewer: OpenSeadragon.Viewer,
   geoJson: FeatureCollection
 ) {
-  console.log("Drawing GeoJSON features:", geoJson.features.length, "features");
+  // console.log("Drawing GeoJSON features:", geoJson.features.length, "features");
 
   geoJson.features.forEach((feature, index) => {
     try {
@@ -110,15 +118,15 @@ export function drawGeoJsonFeatures(
       }
 
       canvas.add(fabricObject);
-      console.log(
-        `Added ${feature.geometry.type} feature ${index + 1}:`,
-        feature.properties
-      );
+      // console.log(
+      //   `Added ${feature.geometry.type} feature ${index + 1}:`,
+      //   feature.properties
+      // );
     } catch (error) {
       console.error(`Error drawing feature ${index + 1}:`, error);
     }
   });
 
   canvas.renderAll();
-  console.log("GeoJSON rendering complete");
+  // console.log("GeoJSON rendering complete");
 }

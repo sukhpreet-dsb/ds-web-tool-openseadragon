@@ -36,6 +36,10 @@ const MapContent = () => {
 
     // Create OpenSeadragon viewer with map tiles
     const osdViewer = createOpenSeadragonViewer(viewerRef.current);
+    
+    osdViewer.addHandler('canvas-key', function(event) {
+      event.preventDefaultAction = true;  // Prevent OSD from handling the key
+    });
 
     // Set up event handlers
     osdViewer.addHandler("open", () => {

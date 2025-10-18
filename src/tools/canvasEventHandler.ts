@@ -29,6 +29,11 @@ export class CanvasEventHandler {
         if (selectedTool === 'text' && !e.target) {
           this.handleTextToolClick(e);
         }
+
+        // Handle line tool clicks
+        if (selectedTool === 'line' && !e.target) {
+          this.handleLineClick(e);
+        }
       });
     };
 
@@ -42,6 +47,11 @@ export class CanvasEventHandler {
         if (selectedTool === 'select' && e.target) {
           ctx.viewer?.setMouseNavEnabled(false);
         }
+
+        // Handle line mouse move for preview
+        if (selectedTool === 'line') {
+          this.handleLineMove(e);
+        }
       });
     };
 
@@ -52,7 +62,7 @@ export class CanvasEventHandler {
 
       ctx.fabricCanvas.on('mouse:up', () => {
         const { selectedTool } = useToolStore.getState();
-        if (selectedTool !== 'line') {
+        if (selectedTool !== 'line' && selectedTool !== 'freehand') {
           setTimeout(() => {
             ctx.viewer?.setMouseNavEnabled(true);
           }, 100);
@@ -75,7 +85,7 @@ export class CanvasEventHandler {
 
       ctx.fabricCanvas.on('selection:cleared', () => {
         const { selectedTool } = useToolStore.getState();
-        if (selectedTool !== 'line') {
+        if (selectedTool !== 'line' && selectedTool !== 'freehand') {
           ctx.viewer?.setMouseNavEnabled(true);
         }
       });
@@ -101,7 +111,7 @@ export class CanvasEventHandler {
       ctx.fabricCanvas.on('object:modified', () => {
         const { selectedTool } = useToolStore.getState();
         setTimeout(() => {
-          if (selectedTool !== 'line') {
+          if (selectedTool !== 'line' && selectedTool !== 'freehand') {
             ctx.viewer?.setMouseNavEnabled(true);
           }
         }, 100);
@@ -133,9 +143,37 @@ export class CanvasEventHandler {
 
   private subscribeToStoreChanges() {
     // Subscribe to tool changes if needed for future enhancements
-    this.unsubscribeStore = useToolStore.subscribe((state) => {
-      console.log(`Tool changed to ${state.selectedTool}`);
-    });
+    // const storeUnsubscribe = useToolStore.subscribe((state) => {
+    //   console.log(`Tool changed to ${state.selectedTool}`);
+    // });
+
+    // Setup keyboard events
+    this.setupKeyboardEvents();
+
+    // Store cleanup function
+    // this.unsubscribeStore = storeUnsubscribe;
+  }
+
+  private setupKeyboardEvents() {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const store = useToolStore.getState();
+
+      // Escape key to cancel line drawing
+      if (e.key === 'Escape' && store.isDrawingLine) {
+        this.cancelLineDrawing();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+
+    // Store reference to remove later - combine with existing unsubscribe
+    const originalUnsubscribe = this.unsubscribeStore;
+    this.unsubscribeStore = () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      if (originalUnsubscribe) {
+        originalUnsubscribe();
+      }
+    };
   }
 
   private handleTextToolClick(e: TEvent) {
@@ -160,6 +198,86 @@ export class CanvasEventHandler {
     setTimeout(() => {
       useToolStore.getState().activateTool(ctx, 'select');
     }, 100);
+  }
+
+  private handleLineClick(e: TEvent) {
+    const ctx = this.getCtx();
+    if (!ctx.fabricCanvas) return;
+
+    const pointer = ctx.fabricCanvas.getPointer(e.e);
+    const store = useToolStore.getState();
+
+    if (!store.isDrawingLine) {
+      // Start drawing a new line - set the start point
+      store.setLineStartPoint({ x: pointer.x, y: pointer.y });
+      store.setIsDrawingLine(true);
+
+      // Create a temporary line for preview
+      const line = new fabric.Line([pointer.x, pointer.y, pointer.x, pointer.y], {
+        stroke: 'black',
+        strokeWidth: 3,
+        selectable: false,
+        evented: false,
+      });
+
+      ctx.fabricCanvas.add(line);
+      store.setCurrentLine(line);
+    } else {
+      // Finish the line at the clicked point
+      if (store.currentLine && store.lineStartPoint) {
+        store.currentLine.set({
+          x1: store.lineStartPoint.x,
+          y1: store.lineStartPoint.y,
+          x2: pointer.x,
+          y2: pointer.y,
+          selectable: true,
+          evented: true,
+        });
+
+        // Reset drawing state
+        store.setIsDrawingLine(false);
+        store.setCurrentLine(undefined);
+        store.setLineStartPoint(undefined);
+
+        ctx.fabricCanvas.renderAll();
+      }
+    }
+  }
+
+  private handleLineMove(e: TEvent) {
+    const ctx = this.getCtx();
+    if (!ctx.fabricCanvas) return;
+
+    const store = useToolStore.getState();
+
+    if (store.isDrawingLine && store.currentLine && store.lineStartPoint) {
+      const pointer = ctx.fabricCanvas.getPointer(e.e);
+
+      // Update the temporary line to show preview
+      store.currentLine.set({
+        x2: pointer.x,
+        y2: pointer.y,
+      });
+
+      ctx.fabricCanvas.renderAll();
+    }
+  }
+
+  private cancelLineDrawing() {
+    const ctx = this.getCtx();
+    const store = useToolStore.getState();
+
+    if (store.isDrawingLine && store.currentLine) {
+      // Remove the temporary line
+      ctx.fabricCanvas?.remove(store.currentLine);
+
+      // Reset drawing state
+      store.setIsDrawingLine(false);
+      store.setCurrentLine(undefined);
+      store.setLineStartPoint(undefined);
+
+      ctx.fabricCanvas?.renderAll();
+    }
   }
 
   public destroy() {
