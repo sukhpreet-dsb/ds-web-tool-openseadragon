@@ -1,7 +1,5 @@
-import { useRef, useEffect, useState } from "react";
-import OpenSeadragon from "openseadragon";
-import * as fabric from "fabric";
-import { FabricOverlay, initOSDFabricJS } from "openseadragon-fabric";
+import { useEffect } from "react";
+import { initOSDFabricJS } from "openseadragon-fabric";
 import {
   fixGeoJsonCoordinateTypes,
   getGeoJsonCenter,
@@ -17,33 +15,17 @@ import {
 } from "../utils/openseadragon-helpers";
 import type { FeatureCollection } from "../types";
 import geojson from "../assets/file2.json";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { HandGrab, Menu, Minus, MousePointer2, Type } from "lucide-react";
+import { useMapContext, MapProvider } from "../contexts/MapContext";
+import { CanvasEventHandler } from "../tools/canvasEventHandler";
+import Toolbar from "../components/Toolbar";
 
 const cleanGeoJson = fixGeoJsonCoordinateTypes(
   geojson as unknown as FeatureCollection
 );
+const center = getGeoJsonCenter(cleanGeoJson);
 
-const MapWithFabric = () => {
-  // Refs for DOM elements
-  const viewerRef = useRef<HTMLDivElement | null>(null);
-  const center = getGeoJsonCenter(cleanGeoJson);
-
-  // State for viewer and canvas instances
-  const [viewer, setViewer] = useState<OpenSeadragon.Viewer>();
-  const [, setFabricOverlay] = useState<FabricOverlay | null>(null);
-  const [fabricCanvas, setFabricCanvas] = useState<fabric.Canvas>();
-  const [open, setOpen] = useState(true);
-  const [selectedTool, setSelectedTool] = useState("");
-  const [, setIsDrawingMode] = useState(false);
+const MapContent = () => {
+  const { viewerRef, canvasEventHandlerRef, setViewer, setFabricCanvas } = useMapContext();
 
   // Initialize the viewer and canvas
   useEffect(() => {
@@ -57,12 +39,19 @@ const MapWithFabric = () => {
 
     // Set up event handlers
     osdViewer.addHandler("open", () => {
-      const { overlay, canvas } = initializeFabricOverlay(osdViewer);
-      // Update state
+      const { canvas } = initializeFabricOverlay(osdViewer);
+
+      // Update context with instances
       setViewer(osdViewer);
-      setupCanvasEventHandlers(canvas, osdViewer);
-      setFabricOverlay(overlay);
       setFabricCanvas(canvas);
+
+      // Set up canvas event handling
+      canvasEventHandlerRef.current = new CanvasEventHandler(() => ({
+        fabricCanvas: canvas,
+        viewer: osdViewer,
+        viewerRef: viewerRef,
+        canvasEventHandlerRef: canvasEventHandlerRef,
+      }));
 
       // Zoom to center after viewer is ready
       zoomToMapCenter(center, osdViewer);
@@ -79,181 +68,31 @@ const MapWithFabric = () => {
     // Cleanup function
     return () => {
       cleanupResize();
+      if (canvasEventHandlerRef.current) {
+        canvasEventHandlerRef.current.destroy();
+      }
       if (osdViewer) {
         osdViewer.destroy();
       }
     };
-  }, []);
-
-  // Helper function to set up canvas event handlers
-  const setupCanvasEventHandlers = (
-    canvas: fabric.Canvas,
-    osdViewer: OpenSeadragon.Viewer
-  ) => {
-    // Mouse down event
-    canvas.on("mouse:down", (e) => {
-      if (selectedTool === "select" || e.target) {
-        osdViewer.setMouseNavEnabled(false);
-      }
-    });
-
-    // Mouse move event
-    canvas.on("mouse:move", (e) => {
-      if (selectedTool === "select" && e.target) {
-        osdViewer.setMouseNavEnabled(false);
-      }
-    });
-
-    // Mouse up event
-    canvas.on("mouse:up", () => {
-      if (selectedTool !== "line") {
-        setTimeout(() => {
-          osdViewer.setMouseNavEnabled(true);
-        }, 100);
-      }
-    });
-
-    // Selection events
-    canvas.on("selection:created", () => {
-      osdViewer.setMouseNavEnabled(false);
-    });
-
-    canvas.on("selection:updated", () => {
-      osdViewer.setMouseNavEnabled(false);
-    });
-
-    canvas.on("selection:cleared", () => {
-      if (selectedTool !== "line") {
-        osdViewer.setMouseNavEnabled(true);
-      }
-    });
-
-    // Object modification events
-    canvas.on("object:moving", () => {
-      osdViewer.setMouseNavEnabled(false);
-    });
-
-    canvas.on("object:scaling", () => {
-      osdViewer.setMouseNavEnabled(false);
-    });
-
-    canvas.on("object:rotating", () => {
-      osdViewer.setMouseNavEnabled(false);
-    });
-
-    canvas.on("object:modified", () => {
-      setTimeout(() => {
-        if (selectedTool !== "line") {
-          osdViewer.setMouseNavEnabled(true);
-        }
-      }, 100);
-    });
-  };
-
-  // Tool handlers
-  const handleToolChange = (tool: string) => {
-    if (!fabricCanvas || !viewer) return;
-
-    setSelectedTool(tool);
-
-    // Reset drawing mode and enable map navigation by default
-    fabricCanvas.isDrawingMode = false;
-    fabricCanvas.selection = false;
-    viewer.setMouseNavEnabled(true);
-
-    switch (tool) {
-      case "select":
-        fabricCanvas.selection = true;
-        viewer.setMouseNavEnabled(false);
-        break;
-
-      case "line":
-        setIsDrawingMode(true);
-        fabricCanvas.isDrawingMode = true;
-        fabricCanvas.freeDrawingBrush = new fabric.PencilBrush(fabricCanvas);
-        fabricCanvas.freeDrawingBrush.width = 5;
-        fabricCanvas.freeDrawingBrush.color = "black";
-        viewer.setMouseNavEnabled(false);
-        break;
-
-      default:
-        break;
-    }
-  };
+  }, [setViewer, setFabricCanvas]);
 
   return (
-    <div
-      className="w-full h-screen relative"
-    >
+    <div className="w-full h-screen relative">
       {/* Viewer Container */}
-      <div
-        ref={viewerRef}
-        className="w-full h-full bg-[#000]"
-      />
-      <div className="absolute left-2 top-2">
-        <DropdownMenu
-          modal={false}
-          open={open}
-          onOpenChange={(value) => setOpen(value)}
-        >
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="cursor-pointer">
-              <Menu />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            className="mt-3"
-            align="start"
-            onInteractOutside={(e) => e.preventDefault()}
-            onPointerDown={(e) => e.preventDefault()}
-          >
-            <DropdownMenuLabel className="px-3">Tools</DropdownMenuLabel>
-            <DropdownMenuGroup className="my-2 px-3">
-              <div className="grid grid-cols-2 gap-4">
-                <DropdownMenuItem
-                  onSelect={(e) => e.preventDefault()}
-                  className={`w-full cursor-pointer ${
-                    selectedTool === "line" ? "bg-[#e0dfff]" : ""
-                  } hover:bg-[#e0dfff] focus:bg-[#e0dfff] delay-75 transition-all flex justify-center`}
-                  onClick={() => handleToolChange("line")}
-                >
-                  <Minus />
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onSelect={(e) => e.preventDefault()}
-                  className={`w-full cursor-pointer ${
-                    selectedTool === "select" ? "bg-[#e0dfff]" : ""
-                  } hover:bg-[#e0dfff] focus:bg-[#e0dfff] delay-75 transition-all flex justify-center`}
-                  onClick={() => handleToolChange("select")}
-                >
-                  <MousePointer2 />
-                </DropdownMenuItem>
-              </div>
-              <div className="grid grid-cols-2 gap-4 mt-2">
-                <DropdownMenuItem
-                  onSelect={(e) => e.preventDefault()}
-                  className={`w-full cursor-pointer ${
-                    selectedTool === "text" ? "bg-[#e0dfff]" : ""
-                  } hover:bg-[#e0dfff] focus:bg-[#e0dfff] delay-75 transition-all flex justify-center`}
-                  onClick={() => handleToolChange("text")}
-                >
-                  <Type />
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onSelect={(e) => e.preventDefault()}
-                  className={`w-full cursor-pointer ${
-                    selectedTool === "hand" ? "bg-[#e0dfff]" : ""
-                  } hover:bg-[#e0dfff] focus:bg-[#e0dfff] delay-75 transition-all flex justify-center`}
-                  onClick={() => handleToolChange("hand")}
-                >
-                  <HandGrab />
-                </DropdownMenuItem>
-              </div>
-            </DropdownMenuGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+      <div ref={viewerRef} className="w-full h-full bg-[#000]" />
+
+      {/* Toolbar */}
+      <Toolbar />
     </div>
+  );
+};
+
+const MapWithFabric = () => {
+  return (
+    <MapProvider>
+      <MapContent />
+    </MapProvider>
   );
 };
 

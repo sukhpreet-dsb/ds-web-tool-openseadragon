@@ -1,0 +1,43 @@
+import { HandGrab, Minus, MousePointer2, Type } from 'lucide-react';
+import type { ToolType } from '../store/toolStore';
+
+export interface ToolConfig {
+  id: ToolType;
+  name: string;
+  icon: React.ComponentType<{ className?: string }>;
+  description?: string;
+  shortcut?: string;
+}
+
+export const TOOLS: ToolConfig[] = [
+  {
+    id: 'select',
+    name: 'Select',
+    icon: MousePointer2,
+    description: 'Select and move objects',
+    shortcut: 'V',
+  },
+  {
+    id: 'hand',
+    name: 'Hand',
+    icon: HandGrab,
+    description: 'Navigate the map',
+    shortcut: 'H',
+  },
+  {
+    id: 'line',
+    name: 'Line',
+    icon: Minus,
+    description: 'Draw freehand lines',
+    shortcut: 'L',
+  },
+  {
+    id: 'text',
+    name: 'Text',
+    icon: Type,
+    description: 'Add text annotations',
+    shortcut: 'T',
+  },
+];
+
+export const DEFAULT_TOOL: ToolType = 'hand';
