@@ -1,11 +1,13 @@
 import * as fabric from 'fabric';
 import type { TEvent } from 'fabric';
 import { useToolStore } from '../store/toolStore';
+import { useCanvasStore } from '../store/canvasStore';
 import type { CTX } from '../contexts/MapContext';
 
 export class CanvasEventHandler {
   private getCtx: () => CTX;
   private unsubscribeStore?: () => void;
+  private isInitialized: boolean = false;
 
   constructor(getCtx: () => CTX) {
     this.getCtx = getCtx;
@@ -118,6 +120,58 @@ export class CanvasEventHandler {
       });
     };
 
+    // Canvas history setup
+    const setupCanvasHistory = () => {
+      const ctx = this.getCtx();
+      if (!ctx.fabricCanvas) return;
+
+      // Load persisted state if available
+      const { getCurrentState, saveState } = useCanvasStore.getState();
+      const initialState = getCurrentState();
+
+      if (initialState) {
+        ctx.fabricCanvas.loadFromJSON(initialState, () => {
+          ctx.fabricCanvas!.renderAll();
+        }).then(() => {
+          // Re-apply GeoJSON properties to ensure they remain non-interactive
+          const objects = ctx.fabricCanvas!.getObjects();
+          objects.forEach(obj => {
+            if (obj.type === 'polyline') {
+              // Re-apply GeoJSON properties
+              obj.set({
+                selectable: false,
+                evented: false,
+                perPixelTargetFind: false,
+              });
+            }
+          });
+        })
+      }
+
+      // Event listeners for canvas changes (to trigger save)
+      const handleCanvasChange = () => {
+        if (this.isInitialized) {
+          const canvasJSON = ctx.fabricCanvas!.toJSON();
+          saveState(canvasJSON);
+        }
+      };
+
+      // Add event listeners for object modifications
+      ctx.fabricCanvas.on('object:added', handleCanvasChange);
+      ctx.fabricCanvas.on('object:modified', handleCanvasChange);
+      ctx.fabricCanvas.on('object:removed', handleCanvasChange);
+      // ctx.fabricCanvas.on('path:created', handleCanvasChange);
+
+      // Initialize after a delay to allow initial GeoJSON loading
+      setTimeout(() => {
+        this.isInitialized = true;
+        // // Save initial state if no persisted state exists
+        // if (!initialState) {
+        //   saveState(ctx.fabricCanvas!.toJSON());
+        // }
+      }, 3000);
+    };
+
     // Set up all event handlers when canvas is available
     const ctx = this.getCtx();
     if (ctx.fabricCanvas) {
@@ -126,6 +180,7 @@ export class CanvasEventHandler {
       setupMouseUp();
       setupSelectionEvents();
       setupObjectEvents();
+      setupCanvasHistory();
     } else {
       // If canvas is not ready, wait a bit and try again
       setTimeout(() => {
@@ -136,6 +191,7 @@ export class CanvasEventHandler {
           setupMouseUp();
           setupSelectionEvents();
           setupObjectEvents();
+          setupCanvasHistory();
         }
       }, 100);
     }
@@ -156,11 +212,22 @@ export class CanvasEventHandler {
 
   private setupKeyboardEvents() {
     const handleKeyDown = (e: KeyboardEvent) => {
-      const store = useToolStore.getState();
+      const toolStore = useToolStore.getState();
 
       // Escape key to cancel line drawing
-      if (e.key === 'Escape' && store.isDrawingLine) {
+      if (e.key === 'Escape' && toolStore.isDrawingLine) {
         this.cancelLineDrawing();
+      }
+
+      // Undo/Redo keyboard shortcuts
+      if (e.ctrlKey || e.metaKey) {
+        if (e.key === 'z' && !e.shiftKey) {
+          e.preventDefault();
+          this.performUndo();
+        } else if ((e.key === 'y') || (e.key === 'z' && e.shiftKey)) {
+          e.preventDefault();
+          this.performRedo();
+        }
       }
     };
 
@@ -240,6 +307,11 @@ export class CanvasEventHandler {
         store.setLineStartPoint(undefined);
 
         ctx.fabricCanvas.renderAll();
+        if (this.isInitialized) {
+          const canvasJSON = ctx.fabricCanvas!.toJSON();
+          const saveState = useCanvasStore.getState().saveState;
+          saveState(canvasJSON);
+        }
       }
     }
   }
@@ -280,6 +352,86 @@ export class CanvasEventHandler {
     }
   }
 
+  public async loadCanvasState(state: string) {
+    try {
+
+      const ctx = this.getCtx();
+      if (!ctx.fabricCanvas || !ctx.viewer) return;
+
+      // Temporarily disable history tracking to prevent loops
+      this.isInitialized = false;
+
+      // Handle both string and object states
+      let stateString = state;
+      if (typeof state === 'object') {
+        // If state is already an object, convert it back to JSON string
+        stateString = JSON.stringify(state);
+      } else if (typeof state !== 'string') {
+        return;
+      }
+
+      // Clear current canvas objects first
+      ctx.fabricCanvas.clear();
+
+      // Load the state using the fabric overlay
+      await new Promise<void>((resolve, reject) => {
+        ctx.fabricCanvas!.loadFromJSON(stateString).then(() => {
+          try {
+            // Re-apply GeoJSON properties to ensure they remain non-interactive
+            const objects = ctx.fabricCanvas!.getObjects();
+            objects.forEach(obj => {
+              if (obj.type === 'polyline') {
+                // Re-apply GeoJSON properties
+                obj.set({
+                  selectable: false,
+                  evented: false,
+                  perPixelTargetFind: false,
+                });
+              }
+            });
+
+            // Render again after viewport update
+            setTimeout(() => {
+              ctx.fabricCanvas!.renderAll();
+              resolve();
+            }, 50);
+          } catch (error) {
+            reject(error);
+          }
+        })
+      });
+
+      // Re-enable history tracking after loading
+      setTimeout(() => {
+        this.isInitialized = true;
+      }, 100);
+    } catch (error) {
+      console.error('Failed to load canvas state:', error);
+    }
+  }
+
+  public performUndo() {
+    const canvasStore = useCanvasStore.getState();
+    if (canvasStore.canUndo()) {
+      canvasStore.undo();
+      const state = canvasStore.getCurrentState();
+      if (state) {
+        this.loadCanvasState(state);
+      }
+    }
+  }
+
+  public performRedo() {
+    const canvasStore = useCanvasStore.getState();
+    if (canvasStore.canRedo()) {
+      canvasStore.redo();
+      const state = canvasStore.getCurrentState();
+      if (state) {
+        this.loadCanvasState(state);
+      }
+    }
+  }
+
   public destroy() {
     const ctx = this.getCtx();
 
@@ -295,6 +447,9 @@ export class CanvasEventHandler {
       ctx.fabricCanvas.off('object:scaling');
       ctx.fabricCanvas.off('object:rotating');
       ctx.fabricCanvas.off('object:modified');
+      ctx.fabricCanvas.off('object:added');
+      ctx.fabricCanvas.off('object:removed');
+      ctx.fabricCanvas.off('path:created');
     }
 
     // Unsubscribe from store

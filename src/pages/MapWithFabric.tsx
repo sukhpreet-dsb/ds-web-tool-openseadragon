@@ -11,7 +11,6 @@ import {
 } from "../utils/fabric-js-helpers";
 import {
   createOpenSeadragonViewer,
-  setupViewerResizeHandler,
 } from "../utils/openseadragon-helpers";
 import type { FeatureCollection } from "../types";
 import geojson from "../assets/file2.json";
@@ -66,12 +65,8 @@ const MapContent = () => {
       }, 1500);
     });
 
-    // Handle window resize
-    const cleanupResize = setupViewerResizeHandler(osdViewer);
-
     // Cleanup function
     return () => {
-      cleanupResize();
       if (canvasEventHandlerRef.current) {
         canvasEventHandlerRef.current.destroy();
       }
@@ -79,7 +74,7 @@ const MapContent = () => {
         osdViewer.destroy();
       }
     };
-  }, [setViewer, setFabricCanvas]);
+  }, [setViewer, setFabricCanvas, canvasEventHandlerRef, viewerRef]);
 
   return (
     <div className="w-full h-screen relative">

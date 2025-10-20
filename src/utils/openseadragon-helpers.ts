@@ -25,22 +25,3 @@ export function createOpenSeadragonViewer(containerElement: HTMLElement) {
     zoomOutButton: "zoom-out-btn",
   });
 }
-
-/**
- * Handles window resize events for the OpenSeadragon viewer
- * @param osdViewer - OpenSeadragon viewer instance
- * @returns Cleanup function to remove event listener
- */
-export function setupViewerResizeHandler(osdViewer: OpenSeadragon.Viewer) {
-  const handleResize = () => {
-    if (osdViewer && osdViewer.viewport) {
-      osdViewer.viewport.goHome(true);
-    }
-  };
-
-  window.addEventListener("resize", handleResize);
-
-  return () => {
-    window.removeEventListener("resize", handleResize);
-  };
-}
