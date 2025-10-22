@@ -4,10 +4,18 @@ import { useToolStore } from '../store/toolStore';
 import { useCanvasStore } from '../store/canvasStore';
 import type { CTX } from '../contexts/MapContext';
 
-export class CanvasEventHandler {
+export interface ICanvasEventHandler {
+  deleteSelectedObjects(): void;
+  performUndo(): void;
+  performRedo(): void;
+  destroy(): void;
+}
+
+export class CanvasEventHandler implements ICanvasEventHandler {
   private getCtx: () => CTX;
   private unsubscribeStore?: () => void;
   private isInitialized: boolean = false;
+  private isBatchDelete: boolean = false;
 
   constructor(getCtx: () => CTX) {
     this.getCtx = getCtx;
@@ -66,7 +74,11 @@ export class CanvasEventHandler {
         const { selectedTool } = useToolStore.getState();
         if (selectedTool !== 'line' && selectedTool !== 'freehand') {
           setTimeout(() => {
-            ctx.viewer?.setMouseNavEnabled(true);
+            if (selectedTool === 'select' ){
+              ctx.viewer?.setMouseNavEnabled(false);
+            } else {
+              ctx.viewer?.setMouseNavEnabled(true);
+            }
           }, 100);
         }
       });
@@ -88,7 +100,11 @@ export class CanvasEventHandler {
       ctx.fabricCanvas.on('selection:cleared', () => {
         const { selectedTool } = useToolStore.getState();
         if (selectedTool !== 'line' && selectedTool !== 'freehand') {
-          ctx.viewer?.setMouseNavEnabled(true);
+          if (selectedTool === 'select' ){
+            ctx.viewer?.setMouseNavEnabled(false);
+          } else {
+            ctx.viewer?.setMouseNavEnabled(true);
+          }
         }
       });
     };
@@ -114,7 +130,11 @@ export class CanvasEventHandler {
         const { selectedTool } = useToolStore.getState();
         setTimeout(() => {
           if (selectedTool !== 'line' && selectedTool !== 'freehand') {
-            ctx.viewer?.setMouseNavEnabled(true);
+            if (selectedTool === 'select' ){
+              ctx.viewer?.setMouseNavEnabled(false);
+            } else {
+              ctx.viewer?.setMouseNavEnabled(true);
+            }
           }
         }, 100);
       });
@@ -150,7 +170,7 @@ export class CanvasEventHandler {
 
       // Event listeners for canvas changes (to trigger save)
       const handleCanvasChange = () => {
-        if (this.isInitialized) {
+        if (this.isInitialized && !this.isBatchDelete) {
           const canvasJSON = ctx.fabricCanvas!.toJSON();
           saveState(canvasJSON);
         }
@@ -213,10 +233,21 @@ export class CanvasEventHandler {
   private setupKeyboardEvents() {
     const handleKeyDown = (e: KeyboardEvent) => {
       const toolStore = useToolStore.getState();
+      const ctx = this.getCtx();
+
+      // Don't handle delete keys if user is actively editing text
+      const activeObject = ctx.fabricCanvas?.getActiveObject();
+      const isEditingText = activeObject && activeObject.type === 'i-text' && (activeObject as fabric.IText).isEditing;
 
       // Escape key to cancel line drawing
       if (e.key === 'Escape' && toolStore.isDrawingLine) {
         this.cancelLineDrawing();
+      }
+
+      // Delete keys - only if not editing text
+      if ((e.key === 'Delete' || e.key === 'Backspace') && !isEditingText) {
+        e.preventDefault();
+        this.deleteSelectedObjects();
       }
 
       // Undo/Redo keyboard shortcuts
@@ -428,6 +459,47 @@ export class CanvasEventHandler {
       const state = canvasStore.getCurrentState();
       if (state) {
         this.loadCanvasState(state);
+      }
+    }
+  }
+
+  public deleteSelectedObjects() {
+    const ctx = this.getCtx();
+    if (!ctx.fabricCanvas) return;
+
+    const activeObjects = ctx.fabricCanvas.getActiveObjects();
+    if (activeObjects && activeObjects.length > 0) {
+      const isBatchDelete = activeObjects.length > 1;
+
+      // Set batch delete flag for multi-selection deletes
+      if (isBatchDelete) {
+        this.isBatchDelete = true;
+      }
+
+      // Delete all selected objects
+      activeObjects.forEach((obj) => {
+        // Don't delete GeoJSON objects (polylines from the map)
+        if (obj.type !== 'polyline') {
+          ctx.fabricCanvas!.remove(obj);
+        }
+      });
+
+      // Clear selection after deletion
+      ctx.fabricCanvas.discardActiveObject();
+      ctx.fabricCanvas.renderAll();
+
+      // For batch deletes, save state once after all deletions
+      // For single deletes, the normal event handling will save
+      if (isBatchDelete) {
+        setTimeout(() => {
+          if (this.isInitialized) {
+            const canvasJSON = ctx.fabricCanvas!.toJSON();
+            const saveState = useCanvasStore.getState().saveState;
+            saveState(canvasJSON);
+          }
+          // Reset batch delete flag
+          this.isBatchDelete = false;
+        }, 10); // Small delay to ensure all removal events are processed
       }
     }
   }

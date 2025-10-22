@@ -1,12 +1,10 @@
-import { HandGrab, Minus, MousePointer2, Type, GitBranch } from 'lucide-react';
+import { HandGrab, MousePointer2, Pencil, Slash, Type } from 'lucide-react';
 import type { ToolType } from '../store/toolStore';
 
 export interface ToolConfig {
   id: ToolType;
   name: string;
   icon: React.ComponentType<{ className?: string }>;
-  description?: string;
-  shortcut?: string;
 }
 
 export const TOOLS: ToolConfig[] = [
@@ -14,36 +12,26 @@ export const TOOLS: ToolConfig[] = [
     id: 'select',
     name: 'Select',
     icon: MousePointer2,
-    description: 'Select and move objects',
-    shortcut: 'V',
   },
   {
     id: 'hand',
     name: 'Hand',
     icon: HandGrab,
-    description: 'Navigate the map',
-    shortcut: 'H',
   },
   {
     id: 'line',
     name: 'Line',
-    icon: GitBranch,
-    description: 'Click to start, click again to finish',
-    shortcut: 'L',
+    icon: Slash,
   },
   {
     id: 'freehand',
-    name: 'Freehand',
-    icon: Minus,
-    description: 'Draw freehand lines',
-    shortcut: 'F',
+    name: 'Freehand Line',
+    icon: Pencil,
   },
   {
     id: 'text',
     name: 'Text',
     icon: Type,
-    description: 'Add text annotations',
-    shortcut: 'T',
   },
 ];
 
