@@ -1,19 +1,20 @@
 import React, { createContext, useContext, useRef, useState, useCallback } from 'react';
 import * as fabric from 'fabric';
 import OpenSeadragon from 'openseadragon';
+import type { ICanvasEventHandler } from '../tools/canvasEventHandler';
 
 export type CTX = {
   fabricCanvas: fabric.Canvas | null;
   viewer: OpenSeadragon.Viewer | null;
 
   viewerRef: React.RefObject<HTMLDivElement | null>;
-  canvasEventHandlerRef: React.RefObject<any>;
+  canvasEventHandlerRef: React.RefObject<ICanvasEventHandler | null>;
 }
 
 export interface MapContextType {
   // Refs to store instances
   viewerRef: React.RefObject<HTMLDivElement | null>;
-  canvasEventHandlerRef: React.RefObject<any>;
+  canvasEventHandlerRef: React.RefObject<ICanvasEventHandler | null>;
 
   // State for instances (only set when ready)
   viewer: OpenSeadragon.Viewer | null;
@@ -37,7 +38,7 @@ export const useMapContext = () => {
 export const MapProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Refs for DOM elements and event handlers
   const viewerRef = useRef<HTMLDivElement | null>(null);
-  const canvasEventHandlerRef = useRef<any>(null);
+  const canvasEventHandlerRef = useRef<ICanvasEventHandler | null>(null);
 
   // State for instances
   const [viewer, setViewer] = useState<OpenSeadragon.Viewer | null>(null);

@@ -94,8 +94,6 @@ export function drawGeoJsonFeatures(
   osdViewer: OpenSeadragon.Viewer,
   geoJson: FeatureCollection
 ) {
-  // console.log("Drawing GeoJSON features:", geoJson.features.length, "features");
-
   geoJson.features.forEach((feature, index) => {
     try {
       let fabricObject: fabric.Object;
@@ -128,5 +126,4 @@ export function drawGeoJsonFeatures(
   });
 
   canvas.renderAll();
-  // console.log("GeoJSON rendering complete");
 }

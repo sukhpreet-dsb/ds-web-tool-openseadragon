@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -7,28 +7,24 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Menu } from 'lucide-react';
-import { useToolStore } from '../store/toolStore';
-import { useMapContext } from '../contexts/MapContext';
-import { TOOLS } from '../tools/toolConfig';
+} from "@/components/ui/dropdown-menu";
+import { Menu } from "lucide-react";
+import { useToolStore } from "../store/toolStore";
+import { useMapContext } from "../contexts/MapContext";
+import { TOOLS } from "../tools/toolConfig";
 
 const Toolbar = () => {
   const [open, setOpen] = useState(true);
   const { selectedTool, activateTool } = useToolStore();
-  const ctx =  useMapContext();
+  const ctx = useMapContext();
 
   const handleToolClick = (toolId: string) => {
-    activateTool(ctx,toolId as 'select' | 'line' | 'text' | 'hand' | '');
+    activateTool(ctx, toolId as "select" | "line" | "text" | "hand" | "");
   };
 
   return (
     <div className="absolute left-2 top-2">
-      <DropdownMenu
-        modal={false}
-        open={open}
-        onOpenChange={setOpen}
-      >
+      <DropdownMenu modal={false} open={open} onOpenChange={setOpen}>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" className="cursor-pointer">
             <Menu />
@@ -50,10 +46,12 @@ const Toolbar = () => {
                     key={tool.id}
                     onSelect={(e) => e.preventDefault()}
                     className={`w-full cursor-pointer ${
-                      selectedTool === tool.id ? 'bg-[#e0dfff]' : ''
-                    } hover:bg-[#e0dfff] focus:bg-[#e0dfff] delay-75 transition-all flex justify-center`}
+                      selectedTool === tool.id
+                        ? "bg-[#e0dfff] focus:bg-[#e0dfff]"
+                        : "focus:bg-zinc-200/60"
+                    } hover:bg-[#e0dfff]  delay-75 transition-all flex justify-center `}
                     onClick={() => handleToolClick(tool.id)}
-                    title={tool.description}
+                    title={tool.name}
                   >
                     <Icon />
                   </DropdownMenuItem>

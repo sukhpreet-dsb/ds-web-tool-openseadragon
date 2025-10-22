@@ -5,10 +5,19 @@ import { useCanvasStore } from '../store/canvasStore';
 import type { CTX } from '../contexts/MapContext';
 import { createCustomIcon } from '../utils/customIcons';
 
-export class CanvasEventHandler {
+export interface ICanvasEventHandler {
+  deleteSelectedObjects(): void;
+  performUndo(): void;
+  performRedo(): void;
+  destroy(): void;
+  setInitialization(enabled: boolean): void;
+}
+
+export class CanvasEventHandler implements ICanvasEventHandler {
   private getCtx: () => CTX;
   private unsubscribeStore?: () => void;
   private isInitialized: boolean = false;
+  private isBatchDelete: boolean = false;
 
   constructor(getCtx: () => CTX) {
     this.getCtx = getCtx;
@@ -72,7 +81,11 @@ export class CanvasEventHandler {
         const { selectedTool } = useToolStore.getState();
         if (selectedTool !== 'line' && selectedTool !== 'freehand') {
           setTimeout(() => {
-            ctx.viewer?.setMouseNavEnabled(true);
+            if (selectedTool === 'select' ){
+              ctx.viewer?.setMouseNavEnabled(false);
+            } else {
+              ctx.viewer?.setMouseNavEnabled(true);
+            }
           }, 100);
         }
       });
@@ -94,7 +107,11 @@ export class CanvasEventHandler {
       ctx.fabricCanvas.on('selection:cleared', () => {
         const { selectedTool } = useToolStore.getState();
         if (selectedTool !== 'line' && selectedTool !== 'freehand') {
-          ctx.viewer?.setMouseNavEnabled(true);
+          if (selectedTool === 'select' ){
+            ctx.viewer?.setMouseNavEnabled(false);
+          } else {
+            ctx.viewer?.setMouseNavEnabled(true);
+          }
         }
       });
     };
@@ -120,16 +137,24 @@ export class CanvasEventHandler {
         const { selectedTool } = useToolStore.getState();
         setTimeout(() => {
           if (selectedTool !== 'line' && selectedTool !== 'freehand') {
-            ctx.viewer?.setMouseNavEnabled(true);
+            if (selectedTool === 'select' ){
+              ctx.viewer?.setMouseNavEnabled(false);
+            } else {
+              ctx.viewer?.setMouseNavEnabled(true);
+            }
           }
         }, 100);
       });
     };
 
     // Canvas history setup
-    const setupCanvasHistory = () => {
+    const setupCanvasHistory = async () => {
       const ctx = this.getCtx();
       if (!ctx.fabricCanvas) return;
+
+      // Wait for persistence data to be loaded from PGlite
+      const canvasStore = useCanvasStore.getState();
+      await canvasStore.waitForHydration();
 
       // Load persisted state if available
       const { getCurrentState, saveState } = useCanvasStore.getState();
@@ -156,7 +181,7 @@ export class CanvasEventHandler {
 
       // Event listeners for canvas changes (to trigger save)
       const handleCanvasChange = () => {
-        if (this.isInitialized) {
+        if (this.isInitialized && !this.isBatchDelete) {
           const canvasJSON = ctx.fabricCanvas!.toJSON();
           saveState(canvasJSON);
         }
@@ -186,10 +211,10 @@ export class CanvasEventHandler {
       setupMouseUp();
       setupSelectionEvents();
       setupObjectEvents();
-      setupCanvasHistory();
+      setupCanvasHistory(); // This is now async but we don't need to await it here
     } else {
       // If canvas is not ready, wait a bit and try again
-      setTimeout(() => {
+      setTimeout(async () => {
         const retryCtx = this.getCtx();
         if (retryCtx.fabricCanvas) {
           setupMouseDown();
@@ -197,7 +222,7 @@ export class CanvasEventHandler {
           setupMouseUp();
           setupSelectionEvents();
           setupObjectEvents();
-          setupCanvasHistory();
+          await setupCanvasHistory(); // Await when called from retry
         }
       }, 100);
     }
@@ -219,10 +244,21 @@ export class CanvasEventHandler {
   private setupKeyboardEvents() {
     const handleKeyDown = (e: KeyboardEvent) => {
       const toolStore = useToolStore.getState();
+      const ctx = this.getCtx();
+
+      // Don't handle delete keys if user is actively editing text
+      const activeObject = ctx.fabricCanvas?.getActiveObject();
+      const isEditingText = activeObject && activeObject.type === 'i-text' && (activeObject as fabric.IText).isEditing;
 
       // Escape key to cancel line drawing
       if (e.key === 'Escape' && toolStore.isDrawingLine) {
         this.cancelLineDrawing();
+      }
+
+      // Delete keys - only if not editing text
+      if ((e.key === 'Delete' || e.key === 'Backspace') && !isEditingText) {
+        e.preventDefault();
+        this.deleteSelectedObjects();
       }
 
       // Undo/Redo keyboard shortcuts
@@ -472,6 +508,51 @@ export class CanvasEventHandler {
         this.loadCanvasState(state);
       }
     }
+  }
+
+  public deleteSelectedObjects() {
+    const ctx = this.getCtx();
+    if (!ctx.fabricCanvas) return;
+
+    const activeObjects = ctx.fabricCanvas.getActiveObjects();
+    if (activeObjects && activeObjects.length > 0) {
+      const isBatchDelete = activeObjects.length > 1;
+
+      // Set batch delete flag for multi-selection deletes
+      if (isBatchDelete) {
+        this.isBatchDelete = true;
+      }
+
+      // Delete all selected objects
+      activeObjects.forEach((obj) => {
+        // Don't delete GeoJSON objects (polylines from the map)
+        if (obj.type !== 'polyline') {
+          ctx.fabricCanvas!.remove(obj);
+        }
+      });
+
+      // Clear selection after deletion
+      ctx.fabricCanvas.discardActiveObject();
+      ctx.fabricCanvas.renderAll();
+
+      // For batch deletes, save state once after all deletions
+      // For single deletes, the normal event handling will save
+      if (isBatchDelete) {
+        setTimeout(() => {
+          if (this.isInitialized) {
+            const canvasJSON = ctx.fabricCanvas!.toJSON();
+            const saveState = useCanvasStore.getState().saveState;
+            saveState(canvasJSON);
+          }
+          // Reset batch delete flag
+          this.isBatchDelete = false;
+        }, 10); // Small delay to ensure all removal events are processed
+      }
+    }
+  }
+
+  public setInitialization(enabled: boolean) {
+    this.isInitialized = enabled;
   }
 
   public destroy() {
