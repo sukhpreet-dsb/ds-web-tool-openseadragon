@@ -1,4 +1,4 @@
-import { HandGrab, Minus, MousePointer2, Type, GitBranch } from 'lucide-react';
+import { HandGrab, Minus, MousePointer2, Type, GitBranch, Plus, Home, Castle } from 'lucide-react';
 import type { ToolType } from '../store/toolStore';
 
 export interface ToolConfig {
@@ -44,6 +44,27 @@ export const TOOLS: ToolConfig[] = [
     icon: Type,
     description: 'Add text annotations',
     shortcut: 'T',
+  },
+  {
+    id: 'plus',
+    name: 'Plus',
+    icon: Plus,
+    description: 'Add plus marker',
+    shortcut: 'P',
+  },
+  {
+    id: 'temple',
+    name: 'Temple',
+    icon: Home,
+    description: 'Add temple marker',
+    shortcut: 'M',
+  },
+  {
+    id: 'tower',
+    name: 'Tower',
+    icon: Castle,
+    description: 'Add tower marker',
+    shortcut: 'W',
   },
 ];
 

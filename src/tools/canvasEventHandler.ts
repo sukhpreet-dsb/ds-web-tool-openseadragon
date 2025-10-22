@@ -3,6 +3,7 @@ import type { TEvent } from 'fabric';
 import { useToolStore } from '../store/toolStore';
 import { useCanvasStore } from '../store/canvasStore';
 import type { CTX } from '../contexts/MapContext';
+import { createCustomIcon } from '../utils/customIcons';
 
 export class CanvasEventHandler {
   private getCtx: () => CTX;
@@ -35,6 +36,11 @@ export class CanvasEventHandler {
         // Handle line tool clicks
         if (selectedTool === 'line' && !e.target) {
           this.handleLineClick(e);
+        }
+
+        // Handle custom icon tool clicks
+        if ((selectedTool === 'plus' || selectedTool === 'temple' || selectedTool === 'tower') && !e.target) {
+          this.handleCustomIconClick(e);
         }
       });
     };
@@ -349,6 +355,42 @@ export class CanvasEventHandler {
       store.setLineStartPoint(undefined);
 
       ctx.fabricCanvas?.renderAll();
+    }
+  }
+
+  private handleCustomIconClick(e: TEvent) {
+    const ctx = this.getCtx();
+    if (!ctx.fabricCanvas) return;
+
+    const pointer = ctx.fabricCanvas.getPointer(e.e);
+    const store = useToolStore.getState();
+
+    // Get the selected tool type
+    const iconType = store.selectedTool as 'plus' | 'temple' | 'tower';
+
+    if (iconType !== 'plus' && iconType !== 'temple' && iconType !== 'tower') {
+      return;
+    }
+
+    try {
+      // Create the custom icon at the clicked position
+      const customIcon = createCustomIcon(iconType, {
+        left: pointer.x,
+        top: pointer.y,
+        size: 40, // Default size
+        strokeWidth: 3
+      });
+
+      // Add the icon to the canvas
+      ctx.fabricCanvas.add(customIcon);
+      ctx.fabricCanvas.setActiveObject(customIcon);
+
+      // Reset to select tool after adding icon
+      setTimeout(() => {
+        useToolStore.getState().activateTool(ctx, 'select');
+      }, 100);
+    } catch (error) {
+      console.error('Error creating custom icon:', error);
     }
   }
 
