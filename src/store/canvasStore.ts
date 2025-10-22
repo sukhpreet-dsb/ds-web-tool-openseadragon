@@ -1,3 +1,4 @@
+import { pgliteStorage } from '@/services/pgliteKV';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
@@ -29,9 +30,16 @@ export interface CanvasHistoryActions {
 
   // Check if redo is possible
   canRedo: () => boolean;
+
+  // Wait for persistence data to be loaded
+  waitForHydration: () => Promise<void>;
 }
 
 export interface CanvasHistoryStore extends CanvasHistoryState, CanvasHistoryActions {}
+
+// Global promise to track hydration completion
+let hydrationPromise: Promise<void> | null = null;
+let hydrationResolver: (() => void) | null = null;
 
 const canvasStoreCreator = persist<CanvasHistoryStore>(
   (set, get) => ({
@@ -42,9 +50,11 @@ const canvasStoreCreator = persist<CanvasHistoryStore>(
     // Action to save a new canvas state
     saveState: (canvasJSON: string) => {
       const { history, currentIndex } = get();
+
       // Truncate future states if we're not at the end (after undo)
       const newHistory = history.slice(0, currentIndex + 1);
       newHistory.push(canvasJSON);
+
       // Limit history size
       if (newHistory.length > MAX_HISTORY) {
         newHistory.shift();
@@ -90,15 +100,48 @@ const canvasStoreCreator = persist<CanvasHistoryStore>(
       const { history, currentIndex } = get();
       return currentIndex < history.length - 1;
     },
+
+    // Wait for persistence data to be loaded
+    waitForHydration: async () => {
+      if (hydrationPromise) {
+        return hydrationPromise;
+      }
+
+      // Create a new hydration promise
+      hydrationPromise = new Promise((resolve) => {
+        hydrationResolver = () => resolve();
+      });
+
+      // Set a timeout fallback in case hydration doesn't complete
+      setTimeout(() => {
+        if (hydrationResolver) {
+          hydrationResolver();
+          hydrationResolver = null;
+          hydrationPromise = null;
+        }
+      }, 5000);
+
+      return hydrationPromise;
+    },
   }),
   {
     name: 'canvas-history', // Key for local storage
-    storage: createJSONStorage(() => localStorage), // Use localStorage
+    // storage: createJSONStorage(() => localStorage), // Use localStorage
+    storage: createJSONStorage(() => pgliteStorage),
     // Only persist these parts of the state
     partialize: (state: any) => ({
       history: state.history,
       currentIndex: state.currentIndex,
     }) as any,
+    // Handle rehydration completion
+    onRehydrateStorage: () => (state) => {
+      // Resolve the hydration promise
+      if (hydrationResolver) {
+        hydrationResolver();
+        hydrationResolver = null;
+        hydrationPromise = null;
+      }
+    },
   }
 );
 

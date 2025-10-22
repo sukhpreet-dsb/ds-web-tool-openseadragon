@@ -9,6 +9,7 @@ export interface ICanvasEventHandler {
   performUndo(): void;
   performRedo(): void;
   destroy(): void;
+  setInitialization(enabled: boolean): void;
 }
 
 export class CanvasEventHandler implements ICanvasEventHandler {
@@ -141,9 +142,13 @@ export class CanvasEventHandler implements ICanvasEventHandler {
     };
 
     // Canvas history setup
-    const setupCanvasHistory = () => {
+    const setupCanvasHistory = async () => {
       const ctx = this.getCtx();
       if (!ctx.fabricCanvas) return;
+
+      // Wait for persistence data to be loaded from PGlite
+      const canvasStore = useCanvasStore.getState();
+      await canvasStore.waitForHydration();
 
       // Load persisted state if available
       const { getCurrentState, saveState } = useCanvasStore.getState();
@@ -200,10 +205,10 @@ export class CanvasEventHandler implements ICanvasEventHandler {
       setupMouseUp();
       setupSelectionEvents();
       setupObjectEvents();
-      setupCanvasHistory();
+      setupCanvasHistory(); // This is now async but we don't need to await it here
     } else {
       // If canvas is not ready, wait a bit and try again
-      setTimeout(() => {
+      setTimeout(async () => {
         const retryCtx = this.getCtx();
         if (retryCtx.fabricCanvas) {
           setupMouseDown();
@@ -211,7 +216,7 @@ export class CanvasEventHandler implements ICanvasEventHandler {
           setupMouseUp();
           setupSelectionEvents();
           setupObjectEvents();
-          setupCanvasHistory();
+          await setupCanvasHistory(); // Await when called from retry
         }
       }, 100);
     }
@@ -502,6 +507,10 @@ export class CanvasEventHandler implements ICanvasEventHandler {
         }, 10); // Small delay to ensure all removal events are processed
       }
     }
+  }
+
+  public setInitialization(enabled: boolean) {
+    this.isInitialized = enabled;
   }
 
   public destroy() {
