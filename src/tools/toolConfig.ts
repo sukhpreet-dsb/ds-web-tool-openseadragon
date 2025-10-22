@@ -47,22 +47,7 @@ export const TOOLS: ToolConfig[] = [
     id: 'tower',
     name: 'Tower',
     icon: Castle,
-  },
-  {
-    id: 'plus',
-    name: 'Plus',
-    icon: Plus,
-  },
-  {
-    id: 'temple',
-    name: 'Temple',
-    icon: Home,
-  },
-  {
-    id: 'tower',
-    name: 'Tower',
-    icon: Castle,
-  },
+  }
 ];
 
 export const DEFAULT_TOOL: ToolType = 'hand';
