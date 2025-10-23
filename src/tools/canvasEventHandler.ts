@@ -2,6 +2,7 @@ import * as fabric from 'fabric';
 import type { TEvent } from 'fabric';
 import { useToolStore } from '../store/toolStore';
 import { useCanvasStore } from '../store/canvasStore';
+import { useKeyStore } from '../store/keyStore';
 import type { CTX } from '../contexts/MapContext';
 import { createCustomIcon } from '../utils/customIcons';
 
@@ -81,7 +82,7 @@ export class CanvasEventHandler implements ICanvasEventHandler {
         const { selectedTool } = useToolStore.getState();
         if (selectedTool !== 'line' && selectedTool !== 'freehand') {
           setTimeout(() => {
-            if (selectedTool === 'select' ){
+            if (selectedTool === 'select') {
               ctx.viewer?.setMouseNavEnabled(false);
             } else {
               ctx.viewer?.setMouseNavEnabled(true);
@@ -107,7 +108,7 @@ export class CanvasEventHandler implements ICanvasEventHandler {
       ctx.fabricCanvas.on('selection:cleared', () => {
         const { selectedTool } = useToolStore.getState();
         if (selectedTool !== 'line' && selectedTool !== 'freehand') {
-          if (selectedTool === 'select' ){
+          if (selectedTool === 'select') {
             ctx.viewer?.setMouseNavEnabled(false);
           } else {
             ctx.viewer?.setMouseNavEnabled(true);
@@ -137,7 +138,7 @@ export class CanvasEventHandler implements ICanvasEventHandler {
         const { selectedTool } = useToolStore.getState();
         setTimeout(() => {
           if (selectedTool !== 'line' && selectedTool !== 'freehand') {
-            if (selectedTool === 'select' ){
+            if (selectedTool === 'select') {
               ctx.viewer?.setMouseNavEnabled(false);
             } else {
               ctx.viewer?.setMouseNavEnabled(true);
@@ -271,14 +272,65 @@ export class CanvasEventHandler implements ICanvasEventHandler {
           this.performRedo();
         }
       }
+
+      // Temporary tool switching
+      const keyStore = useKeyStore.getState();
+
+      // Space key -> Hand tool
+      if ((e.key === " " || e.code === "Space" || e.keyCode === 32) && !keyStore.previousTool) {
+        e.preventDefault();
+        keyStore.setPreviousTool(toolStore.selectedTool);
+        if (toolStore.selectedTool !== 'hand') {
+          toolStore.activateTool(ctx, 'hand');
+        }
+      }
+
+      // Ctrl key -> Select tool (but not when combined with other shortcuts)
+      if ((e.ctrlKey || e.metaKey) && !keyStore.previousTool &&
+          e.key !== 'z' && e.key !== 'y' && e.key !== 'Delete' && e.key !== 'Backspace') {
+        e.preventDefault();
+        keyStore.setPreviousTool(toolStore.selectedTool);
+        if (toolStore.selectedTool !== 'select') {
+          toolStore.activateTool(ctx, 'select');
+        }
+      }
     };
 
     document.addEventListener('keydown', handleKeyDown);
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      const toolStore = useToolStore.getState();
+      const keyStore = useKeyStore.getState();
+      const ctx = this.getCtx();
+
+      // Restore previous tool when space is released
+      if ((e.key === " " || e.code === "Space" || e.keyCode === 32) && keyStore.previousTool) {
+        e.preventDefault();
+        if (keyStore.previousTool && keyStore.previousTool !== 'hand') {
+          toolStore.activateTool(ctx, keyStore.previousTool);
+          keyStore.setPreviousTool(null);
+          keyStore.resetKeyState();
+        }
+      }
+
+      // Restore previous tool when ctrl is released (and no other modifiers are active)
+      if (!e.ctrlKey && !e.metaKey && keyStore.previousTool) {
+        e.preventDefault();
+        if (keyStore.previousTool && keyStore.previousTool !== 'select') {
+          toolStore.activateTool(ctx, keyStore.previousTool);
+          keyStore.setPreviousTool(null);
+          keyStore.resetKeyState();
+        }
+      }
+    };
+
+    document.addEventListener('keyup', handleKeyUp);
 
     // Store reference to remove later - combine with existing unsubscribe
     const originalUnsubscribe = this.unsubscribeStore;
     this.unsubscribeStore = () => {
       document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('keyup', handleKeyUp);
       if (originalUnsubscribe) {
         originalUnsubscribe();
       }
@@ -315,6 +367,7 @@ export class CanvasEventHandler implements ICanvasEventHandler {
 
     const pointer = ctx.fabricCanvas.getScenePoint(e.e);
     const store = useToolStore.getState();
+    const isShiftPressed = (e.e as MouseEvent).shiftKey;
 
     if (!store.isDrawingLine) {
       // Start drawing a new line - set the start point
@@ -332,27 +385,65 @@ export class CanvasEventHandler implements ICanvasEventHandler {
       ctx.fabricCanvas.add(line);
       store.setCurrentLine(line);
     } else {
-      // Finish the line at the clicked point
+      // Continue drawing or finish the line
       if (store.currentLine && store.lineStartPoint) {
-        store.currentLine.set({
-          x1: store.lineStartPoint.x,
-          y1: store.lineStartPoint.y,
-          x2: pointer.x,
-          y2: pointer.y,
-          selectable: true,
-          evented: true,
-        });
+        if (isShiftPressed) {
+          // Shift + Click: Continue the line from the current endpoint
+          // Finalize the current segment
+          store.currentLine.set({
+            x1: store.lineStartPoint.x,
+            y1: store.lineStartPoint.y,
+            x2: pointer.x,
+            y2: pointer.y,
+            selectable: true,
+            evented: true,
+          });
 
-        // Reset drawing state
-        store.setIsDrawingLine(false);
-        store.setCurrentLine(undefined);
-        store.setLineStartPoint(undefined);
+          // Save canvas state for this segment
+          if (this.isInitialized) {
+            const canvasJSON = ctx.fabricCanvas!.toJSON();
+            const saveState = useCanvasStore.getState().saveState;
+            saveState(canvasJSON);
+          }
 
-        ctx.fabricCanvas.renderAll();
-        if (this.isInitialized) {
-          const canvasJSON = ctx.fabricCanvas!.toJSON();
-          const saveState = useCanvasStore.getState().saveState;
-          saveState(canvasJSON);
+          // Start a new line segment from the current endpoint
+          store.setLineStartPoint({ x: pointer.x, y: pointer.y });
+          store.setIsDrawingLine(true);
+
+          // Create a new temporary line for the next segment
+          const newLine = new fabric.Line([pointer.x, pointer.y, pointer.x, pointer.y], {
+            stroke: 'black',
+            strokeWidth: 3,
+            selectable: false,
+            evented: false,
+          });
+
+          ctx.fabricCanvas.add(newLine);
+          store.setCurrentLine(newLine);
+
+          ctx.fabricCanvas.renderAll();
+        } else {
+          // Regular Click: End the line at the clicked point
+          store.currentLine.set({
+            x1: store.lineStartPoint.x,
+            y1: store.lineStartPoint.y,
+            x2: pointer.x,
+            y2: pointer.y,
+            selectable: true,
+            evented: true,
+          });
+
+          // Reset drawing state
+          store.setIsDrawingLine(false);
+          store.setCurrentLine(undefined);
+          store.setLineStartPoint(undefined);
+
+          ctx.fabricCanvas.renderAll();
+          if (this.isInitialized) {
+            const canvasJSON = ctx.fabricCanvas!.toJSON();
+            const saveState = useCanvasStore.getState().saveState;
+            saveState(canvasJSON);
+          }
         }
       }
     }
