@@ -6,6 +6,9 @@ import { convertLngLatToOsdCoordinates } from "./coordinate-conversion";
 export const CANVAS_OPTIONS: fabric.TOptions<fabric.CanvasOptions> = {
   selection: true,
   preserveObjectStacking: true,
+  targetFindTolerance: 5,
+  allowTouchScrolling: false,
+  imageSmoothingEnabled: true,
 };
 
 /**
@@ -19,6 +22,29 @@ export function initializeFabricOverlay(osdViewer: OpenSeadragon.Viewer) {
   });
 
   const canvas = overlay.fabricCanvas();
+   canvas.defaultCursor = 'grab';
+          canvas.hoverCursor = 'grab';  
+
+          if (osdViewer && osdViewer.container) {
+          osdViewer.container.style.cursor = 'grab';
+
+          // Add event listeners for grab/grabbing cursor during drag
+          const handleMouseDown = () => {
+            osdViewer.container.style.cursor = 'grabbing';
+          };
+
+          const handleMouseUp = () => {
+            osdViewer.container.style.cursor = 'grab';
+          };
+
+          // Remove existing listeners to avoid duplicates
+          osdViewer.container.removeEventListener('mousedown', handleMouseDown);
+          osdViewer.container.removeEventListener('mouseup', handleMouseUp);
+
+          // Add new listeners
+          osdViewer.container.addEventListener('mousedown', handleMouseDown);
+          osdViewer.container.addEventListener('mouseup', handleMouseUp);
+        }
   return { overlay, canvas };
 }
 
@@ -44,7 +70,9 @@ export function createPointFabricObject(
     fill: "rgba(0, 123, 255, 0.8)",
     stroke: "#0056b3",
     strokeWidth: 1,
-    selectable: true,
+    selectable: false,
+    evented: false,
+    perPixelTargetFind: false,
     data: { properties, type: "Point" },
   });
 }
@@ -68,9 +96,12 @@ export function createLineStringFabricObject(
 
   return new fabric.Polyline(points, {
     fill: "transparent",
-    stroke: "red",
+    stroke: "blue",
     strokeWidth: 10,
-    selectable: true,
+    selectable: false,
+    evented: false,
+    perPixelTargetFind: false,
+    excludeFromExport: false,
     data: { properties, type: "LineString" },
   });
 }
@@ -86,8 +117,6 @@ export function drawGeoJsonFeatures(
   osdViewer: OpenSeadragon.Viewer,
   geoJson: FeatureCollection
 ) {
-  console.log("Drawing GeoJSON features:", geoJson.features.length, "features");
-
   geoJson.features.forEach((feature, index) => {
     try {
       let fabricObject: fabric.Object;
@@ -110,15 +139,14 @@ export function drawGeoJsonFeatures(
       }
 
       canvas.add(fabricObject);
-      console.log(
-        `Added ${feature.geometry.type} feature ${index + 1}:`,
-        feature.properties
-      );
+      // console.log(
+      //   `Added ${feature.geometry.type} feature ${index + 1}:`,
+      //   feature.properties
+      // );
     } catch (error) {
       console.error(`Error drawing feature ${index + 1}:`, error);
     }
   });
 
   canvas.renderAll();
-  console.log("GeoJSON rendering complete");
 }
