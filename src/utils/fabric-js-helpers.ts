@@ -22,6 +22,29 @@ export function initializeFabricOverlay(osdViewer: OpenSeadragon.Viewer) {
   });
 
   const canvas = overlay.fabricCanvas();
+   canvas.defaultCursor = 'grab';
+          canvas.hoverCursor = 'grab';  
+
+          if (osdViewer && osdViewer.container) {
+          osdViewer.container.style.cursor = 'grab';
+
+          // Add event listeners for grab/grabbing cursor during drag
+          const handleMouseDown = () => {
+            osdViewer.container.style.cursor = 'grabbing';
+          };
+
+          const handleMouseUp = () => {
+            osdViewer.container.style.cursor = 'grab';
+          };
+
+          // Remove existing listeners to avoid duplicates
+          osdViewer.container.removeEventListener('mousedown', handleMouseDown);
+          osdViewer.container.removeEventListener('mouseup', handleMouseUp);
+
+          // Add new listeners
+          osdViewer.container.addEventListener('mousedown', handleMouseDown);
+          osdViewer.container.addEventListener('mouseup', handleMouseUp);
+        }
   return { overlay, canvas };
 }
 

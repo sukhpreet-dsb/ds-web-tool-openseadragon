@@ -49,10 +49,17 @@ export const useToolStore = create<ToolStore>((set, get) => ({
     if (fabricCanvas) {
       fabricCanvas.isDrawingMode = false;
       fabricCanvas.selection = false;
+      // Reset cursor to default
+      fabricCanvas.defaultCursor = 'default';
+      fabricCanvas.hoverCursor = 'default';
     }
 
     if (viewer) {
       viewer.setMouseNavEnabled(true);
+      // Reset viewer cursor to default
+      if (viewer.container) {
+        viewer.container.style.cursor = 'default';
+      }
     }
 
     set({
@@ -79,7 +86,13 @@ export const useToolStore = create<ToolStore>((set, get) => ({
     switch (tool) {
       case 'select':
         fabricCanvas.selection = true;
+        fabricCanvas.defaultCursor = 'default';
+        fabricCanvas.hoverCursor = 'move';
         viewer.setMouseNavEnabled(false);
+        // Reset viewer cursor
+        if (viewer.container) {
+          viewer.container.style.cursor = 'default';
+        }
         break;
 
       case 'freehand':
@@ -88,17 +101,35 @@ export const useToolStore = create<ToolStore>((set, get) => ({
         fabricCanvas.freeDrawingBrush = new fabric.PencilBrush(fabricCanvas);
         fabricCanvas.freeDrawingBrush.width = 5;
         fabricCanvas.freeDrawingBrush.color = 'black';
+        fabricCanvas.defaultCursor = 'crosshair';
+        fabricCanvas.hoverCursor = 'crosshair';
         viewer.setMouseNavEnabled(false);
+        // Reset viewer cursor
+        if (viewer.container) {
+          viewer.container.style.cursor = 'default';
+        }
         break;
 
       case 'line':
         // Line tool will be handled by mouse events
+        fabricCanvas.defaultCursor = 'crosshair';
+        fabricCanvas.hoverCursor = 'crosshair';
         viewer.setMouseNavEnabled(false);
+        // Reset viewer cursor
+        if (viewer.container) {
+          viewer.container.style.cursor = 'default';
+        }
         break;
 
       case 'text':
         // Text tool will be handled separately when clicking on canvas
+        fabricCanvas.defaultCursor = 'text';
+        fabricCanvas.hoverCursor = 'text';
         viewer.setMouseNavEnabled(false);
+        // Reset viewer cursor
+        if (viewer.container) {
+          viewer.container.style.cursor = 'default';
+        }
         break;
 
       case 'pits':
@@ -106,12 +137,45 @@ export const useToolStore = create<ToolStore>((set, get) => ({
       case 'gp':
       case 'junction':
         // Custom icon tools will be handled by mouse events
+        fabricCanvas.defaultCursor = 'crosshair';
+        fabricCanvas.hoverCursor = 'crosshair';
         viewer.setMouseNavEnabled(false);
+        // Reset viewer cursor
+        if (viewer.container) {
+          viewer.container.style.cursor = 'default';
+        }
         break;
 
       case 'hand':
         // Hand tool is essentially the default navigation mode
         viewer.setMouseNavEnabled(true);
+        // Set hand/grab cursor for both canvas and viewer
+        if (fabricCanvas) {
+          fabricCanvas.defaultCursor = 'grab';
+          fabricCanvas.hoverCursor = 'grab';
+          fabricCanvas.selection = false;
+        }
+        // Set grab cursor on the viewer container as well
+        if (viewer && viewer.container) {
+          viewer.container.style.cursor = 'grab';
+
+          // Add event listeners for grab/grabbing cursor during drag
+          const handleMouseDown = () => {
+            viewer.container.style.cursor = 'grabbing';
+          };
+
+          const handleMouseUp = () => {
+            viewer.container.style.cursor = 'grab';
+          };
+
+          // Remove existing listeners to avoid duplicates
+          viewer.container.removeEventListener('mousedown', handleMouseDown);
+          viewer.container.removeEventListener('mouseup', handleMouseUp);
+
+          // Add new listeners
+          viewer.container.addEventListener('mousedown', handleMouseDown);
+          viewer.container.addEventListener('mouseup', handleMouseUp);
+        }
         break;
 
       default:
