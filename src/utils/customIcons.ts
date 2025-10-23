@@ -9,37 +9,23 @@ export interface CustomIconOptions {
 }
 
 /**
- * Creates a plus icon with rounded border circle using Fabric.js objects
+ * Creates a pits icon for pits with high stroke width
  */
 export function createPlusIcon(options: CustomIconOptions): fabric.Group {
   const {
     left,
     top,
     size = 40,
-    color = '#FF0000',
-    strokeWidth = 4
+    color = 'red',
+    strokeWidth = 6
   } = options;
 
   const halfSize = size / 2;
-  const circleRadius = size / 2.2;
-  const lineLength = size * 0.6; // Make lines shorter for circle
+  const lineLength = size  - 30; // Longer lines for pits
+  console.log(lineLength,"lineLength")
   const halfLineLength = lineLength / 2;
 
-  // Create background circle with white fill and red border
-  const backgroundCircle = new fabric.Circle({
-    radius: circleRadius,
-    left: halfSize - circleRadius,
-    top: halfSize - circleRadius,
-    fill: '#FFFFFF',
-    stroke: color,
-    strokeWidth: 2,
-    selectable: false,
-    evented: false,
-    originX: 'left',
-    originY: 'top'
-  });
-
-  // Create horizontal line with rounded ends
+  // Create horizontal line with high stroke
   const horizontalLine = new fabric.Line(
     [halfSize - halfLineLength, halfSize, halfSize + halfLineLength, halfSize],
     {
@@ -49,11 +35,11 @@ export function createPlusIcon(options: CustomIconOptions): fabric.Group {
       evented: false,
       originX: 'left',
       originY: 'top',
-      strokeLineCap: 'round' // Rounded line ends
+      strokeLineCap: 'round'
     }
   );
 
-  // Create vertical line with rounded ends
+  // Create vertical line with high stroke
   const verticalLine = new fabric.Line(
     [halfSize, halfSize - halfLineLength, halfSize, halfSize + halfLineLength],
     {
@@ -63,12 +49,12 @@ export function createPlusIcon(options: CustomIconOptions): fabric.Group {
       evented: false,
       originX: 'left',
       originY: 'top',
-      strokeLineCap: 'round' // Rounded line ends
+      strokeLineCap: 'round'
     }
   );
 
-  // Group all objects to form the plus icon
-  const plusGroup = new fabric.Group([backgroundCircle, horizontalLine, verticalLine], {
+  // Group all objects to form the pits icon
+  const plusGroup = new fabric.Group([horizontalLine, verticalLine], {
     left: left - halfSize,
     top: top - halfSize,
     selectable: true,
@@ -79,35 +65,32 @@ export function createPlusIcon(options: CustomIconOptions): fabric.Group {
   });
 
   // Add custom type as a custom property
-  (plusGroup as any).customType = 'plus';
+  (plusGroup as fabric.Group & { customType?: string }).customType = 'pits';
 
   return plusGroup;
 }
 
 /**
- * Creates a temple icon using Fabric.js objects
+ * Creates a blue triangle icon (R1) using Fabric.js objects
  */
-export function createTempleIcon(options: CustomIconOptions): fabric.Group {
+export function createTriangleIcon(options: CustomIconOptions): fabric.Group {
   const {
     left,
     top,
     size = 40,
-    color = '#8B4513',
+    color = 'grey',
     strokeWidth = 2
   } = options;
 
   const halfSize = size / 2;
-  const roofHeight = size * 0.3;
-  const buildingWidth = size * 0.6;
-  const buildingHeight = size * 0.5;
-  const halfBuildingWidth = buildingWidth / 2;
+  const triangleSize = size * 0.8;
 
-  // Create triangle roof
-  const roof = new fabric.Polygon(
+  // Create triangle pointing up
+  const triangle = new fabric.Polygon(
     [
-      { x: halfSize, y: halfSize - roofHeight }, // Top point
-      { x: halfSize - halfBuildingWidth, y: halfSize }, // Bottom left
-      { x: halfSize + halfBuildingWidth, y: halfSize } // Bottom right
+      { x: halfSize, y: halfSize - triangleSize / 2 }, // Top point
+      { x: halfSize - triangleSize / 2, y: halfSize + triangleSize / 2 }, // Bottom left
+      { x: halfSize + triangleSize / 2, y: halfSize + triangleSize / 2 } // Bottom right
     ],
     {
       fill: color,
@@ -120,23 +103,8 @@ export function createTempleIcon(options: CustomIconOptions): fabric.Group {
     }
   );
 
-  // Create rectangle building
-  const building = new fabric.Rect({
-    left: halfSize - halfBuildingWidth,
-    top: halfSize,
-    width: buildingWidth,
-    height: buildingHeight,
-    fill: color,
-    stroke: '#000000',
-    strokeWidth: strokeWidth,
-    selectable: false,
-    evented: false,
-    originX: 'left',
-    originY: 'top'
-  });
-
-  // Group roof and building
-  const templeGroup = new fabric.Group([roof, building], {
+  // Group all objects to form the triangle icon
+  const triangleGroup = new fabric.Group([triangle], {
     left: left - halfSize,
     top: top - halfSize,
     selectable: true,
@@ -147,35 +115,31 @@ export function createTempleIcon(options: CustomIconOptions): fabric.Group {
   });
 
   // Add custom type as a custom property
-  (templeGroup as any).customType = 'temple';
+  (triangleGroup as fabric.Group & { customType?: string }).customType = 'triangle';
 
-  return templeGroup;
+  return triangleGroup;
 }
 
 /**
- * Creates a tower icon using Fabric.js objects
+ * Creates a GP icon (purple circle with black dot) using Fabric.js objects
  */
-export function createTowerIcon(options: CustomIconOptions): fabric.Group {
+export function createGpIcon(options: CustomIconOptions): fabric.Group {
   const {
     left,
     top,
     size = 40,
-    color = '#696969',
+    color = '#9333EA', // Purple color
     strokeWidth = 2
   } = options;
 
   const halfSize = size / 2;
-  const towerWidth = size * 0.4;
-  const towerHeight = size * 0.7;
-  const halfTowerWidth = towerWidth / 2;
-  const roofHeight = size * 0.2;
+  const circleRadius = size * 0.4;
 
-  // Create rectangle tower body
-  const towerBody = new fabric.Rect({
-    left: halfSize - halfTowerWidth,
-    top: halfSize - towerHeight + roofHeight,
-    width: towerWidth,
-    height: towerHeight - roofHeight,
+  // Create purple circle
+  const purpleCircle = new fabric.Circle({
+    left: halfSize - circleRadius,
+    top: halfSize - circleRadius,
+    radius: circleRadius,
     fill: color,
     stroke: '#000000',
     strokeWidth: strokeWidth,
@@ -185,26 +149,20 @@ export function createTowerIcon(options: CustomIconOptions): fabric.Group {
     originY: 'top'
   });
 
-  // Create triangle roof
-  const roof = new fabric.Polygon(
-    [
-      { x: halfSize, y: halfSize - towerHeight }, // Top point
-      { x: halfSize - halfTowerWidth * 0.8, y: halfSize - towerHeight + roofHeight }, // Bottom left
-      { x: halfSize + halfTowerWidth * 0.8, y: halfSize - towerHeight + roofHeight } // Bottom right
-    ],
-    {
-      fill: color,
-      stroke: '#000000',
-      strokeWidth: strokeWidth,
-      selectable: false,
-      evented: false,
-      originX: 'left',
-      originY: 'top'
-    }
-  );
+  // Create black dot in center
+  const blackDot = new fabric.Circle({
+    left: halfSize - 3,
+    top: halfSize - 3,
+    radius: 3,
+    fill: '#000000',
+    selectable: false,
+    evented: false,
+    originX: 'left',
+    originY: 'top'
+  });
 
-  // Group tower body and roof
-  const towerGroup = new fabric.Group([towerBody, roof], {
+  // Group all objects to form the GP icon
+  const gpGroup = new fabric.Group([purpleCircle, blackDot], {
     left: left - halfSize,
     top: top - halfSize,
     selectable: true,
@@ -215,25 +173,87 @@ export function createTowerIcon(options: CustomIconOptions): fabric.Group {
   });
 
   // Add custom type as a custom property
-  (towerGroup as any).customType = 'tower';
+  (gpGroup as fabric.Group & { customType?: string }).customType = 'gp';
 
-  return towerGroup;
+  return gpGroup;
 }
+
+/**
+ * Creates a Junction Point icon (red box with black dot) using Fabric.js objects
+ */
+export function createJunctionIcon(options: CustomIconOptions): fabric.Group {
+  const {
+    left,
+    top,
+    size = 40,
+    color = '#DC2626', // Red color
+    strokeWidth = 2
+  } = options;
+
+  const halfSize = size / 2;
+  const boxSize = size * 0.6;
+
+  // Create red box
+  const redBox = new fabric.Rect({
+    left: halfSize - boxSize / 2,
+    top: halfSize - boxSize / 2,
+    width: boxSize,
+    height: boxSize,
+    fill: color,
+    stroke: '#000000',
+    strokeWidth: strokeWidth,
+    selectable: false,
+    evented: false,
+    originX: 'left',
+    originY: 'top'
+  });
+
+  // Create black dot in center
+  const blackDot = new fabric.Circle({
+    left: halfSize - 3,
+    top: halfSize - 3,
+    radius: 3,
+    fill: '#000000',
+    selectable: false,
+    evented: false,
+    originX: 'left',
+    originY: 'top'
+  });
+
+  // Group all objects to form the junction point icon
+  const junctionGroup = new fabric.Group([redBox, blackDot], {
+    left: left - halfSize,
+    top: top - halfSize,
+    selectable: true,
+    evented: true,
+    hasControls: true,
+    hasBorders: true,
+    lockScalingFlip: true
+  });
+
+  // Add custom type as a custom property
+  (junctionGroup as fabric.Group & { customType?: string }).customType = 'junction';
+
+  return junctionGroup;
+}
+
 
 /**
  * Factory function to create custom icons based on type
  */
 export function createCustomIcon(
-  type: 'plus' | 'temple' | 'tower',
+  type: 'pits' | 'triangle' | 'gp' | 'junction',
   options: CustomIconOptions
 ): fabric.Group {
   switch (type) {
-    case 'plus':
+    case 'pits':
       return createPlusIcon(options);
-    case 'temple':
-      return createTempleIcon(options);
-    case 'tower':
-      return createTowerIcon(options);
+    case 'triangle':
+      return createTriangleIcon(options);
+    case 'gp':
+      return createGpIcon(options);
+    case 'junction':
+      return createJunctionIcon(options);
     default:
       throw new Error(`Unknown icon type: ${type}`);
   }

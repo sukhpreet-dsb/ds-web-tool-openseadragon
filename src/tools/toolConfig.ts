@@ -1,4 +1,4 @@
-import { Castle, HandGrab, Home, MousePointer2, Pencil, Plus, Slash, Type } from 'lucide-react';
+import { HandGrab, MousePointer2, Pencil, Plus, Slash, Type, Triangle, Circle, Square } from 'lucide-react';
 import type { ToolType } from '../store/toolStore';
 
 export interface ToolConfig {
@@ -34,19 +34,24 @@ export const TOOLS: ToolConfig[] = [
     icon: Type,
   },
   {
-    id: 'plus',
-    name: 'Plus',
+    id: 'pits',
+    name: 'pits',
     icon: Plus,
   },
   {
-    id: 'temple',
-    name: 'Temple',
-    icon: Home,
+    id: 'triangle',
+    name: 'Triangle - R1',
+    icon: Triangle,
   },
   {
-    id: 'tower',
-    name: 'Tower',
-    icon: Castle,
+    id: 'gp',
+    name: 'GP',
+    icon: Circle,
+  },
+  {
+    id: 'junction',
+    name: 'Junction Point',
+    icon: Square,
   }
 ];
 

@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import * as fabric from 'fabric';
 import type { CTX } from '@/contexts/MapContext';
 
-export type ToolType = 'select' | 'line' | 'freehand' | 'text' | 'hand' | 'plus' | 'temple' | 'tower' | '';
+export type ToolType = 'select' | 'line' | 'freehand' | 'text' | 'hand' | 'pits' | 'triangle' | 'gp' | 'junction' | '';
 
 export interface ToolState {
   selectedTool: ToolType;
@@ -101,9 +101,10 @@ export const useToolStore = create<ToolStore>((set, get) => ({
         viewer.setMouseNavEnabled(false);
         break;
 
-      case 'plus':
-      case 'temple':
-      case 'tower':
+      case 'pits':
+      case 'triangle':
+      case 'gp':
+      case 'junction':
         // Custom icon tools will be handled by mouse events
         viewer.setMouseNavEnabled(false);
         break;

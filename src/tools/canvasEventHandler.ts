@@ -48,7 +48,7 @@ export class CanvasEventHandler implements ICanvasEventHandler {
         }
 
         // Handle custom icon tool clicks
-        if ((selectedTool === 'plus' || selectedTool === 'temple' || selectedTool === 'tower') && !e.target) {
+        if ((selectedTool === 'pits' || selectedTool === 'triangle' || selectedTool === 'gp' || selectedTool === 'junction') && !e.target) {
           this.handleCustomIconClick(e);
         }
       });
@@ -402,9 +402,9 @@ export class CanvasEventHandler implements ICanvasEventHandler {
     const store = useToolStore.getState();
 
     // Get the selected tool type
-    const iconType = store.selectedTool as 'plus' | 'temple' | 'tower';
+    const iconType = store.selectedTool as 'pits' | 'triangle' | 'gp' | 'junction';
 
-    if (iconType !== 'plus' && iconType !== 'temple' && iconType !== 'tower') {
+    if (iconType !== 'pits' && iconType !== 'triangle' && iconType !== 'gp' && iconType !== 'junction') {
       return;
     }
 

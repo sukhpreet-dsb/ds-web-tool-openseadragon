@@ -134,7 +134,7 @@ const canvasStoreCreator = persist<CanvasHistoryStore>(
       currentIndex: state.currentIndex,
     }) as any,
     // Handle rehydration completion
-    onRehydrateStorage: () => (state) => {
+    onRehydrateStorage: () => (_state) => {
       // Resolve the hydration promise
       if (hydrationResolver) {
         hydrationResolver();
