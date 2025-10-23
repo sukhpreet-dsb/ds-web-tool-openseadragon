@@ -341,7 +341,7 @@ export class CanvasEventHandler implements ICanvasEventHandler {
     const ctx = this.getCtx();
     if (!ctx.fabricCanvas) return;
 
-    const pointer = ctx.fabricCanvas.getPointer(e.e);
+    const pointer = ctx.fabricCanvas.getScenePoint(e.e);
     const text = new fabric.IText('Click to edit', {
       left: pointer.x,
       top: pointer.y,
@@ -365,7 +365,7 @@ export class CanvasEventHandler implements ICanvasEventHandler {
     const ctx = this.getCtx();
     if (!ctx.fabricCanvas) return;
 
-    const pointer = ctx.fabricCanvas.getPointer(e.e);
+    const pointer = ctx.fabricCanvas.getScenePoint(e.e);
     const store = useToolStore.getState();
     const isShiftPressed = (e.e as MouseEvent).shiftKey;
 
@@ -456,7 +456,7 @@ export class CanvasEventHandler implements ICanvasEventHandler {
     const store = useToolStore.getState();
 
     if (store.isDrawingLine && store.currentLine && store.lineStartPoint) {
-      const pointer = ctx.fabricCanvas.getPointer(e.e);
+      const pointer = ctx.fabricCanvas.getScenePoint(e.e);
 
       // Update the temporary line to show preview
       store.currentLine.set({
@@ -489,7 +489,7 @@ export class CanvasEventHandler implements ICanvasEventHandler {
     const ctx = this.getCtx();
     if (!ctx.fabricCanvas) return;
 
-    const pointer = ctx.fabricCanvas.getPointer(e.e);
+    const pointer = ctx.fabricCanvas.getScenePoint(e.e);
     const store = useToolStore.getState();
 
     // Get the selected tool type
