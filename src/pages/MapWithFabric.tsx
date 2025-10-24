@@ -9,14 +9,13 @@ import {
   initializeFabricOverlay,
   drawGeoJsonFeatures,
 } from "../utils/fabric-js-helpers";
-import {
-  createOpenSeadragonViewer,
-} from "../utils/openseadragon-helpers";
+import { createOpenSeadragonViewer } from "../utils/openseadragon-helpers";
 import type { FeatureCollection } from "../types";
 import geojson from "../assets/file2.json";
 import { useMapContext, MapProvider } from "../contexts/MapContext";
 import { CanvasEventHandler } from "../tools/canvasEventHandler";
 import Toolbar from "../components/Toolbar";
+import { HelpModal } from "@/components/HelpModal";
 
 const cleanGeoJson = fixGeoJsonCoordinateTypes(
   geojson as unknown as FeatureCollection
@@ -24,7 +23,8 @@ const cleanGeoJson = fixGeoJsonCoordinateTypes(
 const center = getGeoJsonCenter(cleanGeoJson);
 
 const MapContent = () => {
-  const { viewerRef, canvasEventHandlerRef, setViewer, setFabricCanvas } = useMapContext();
+  const { viewerRef, canvasEventHandlerRef, setViewer, setFabricCanvas } =
+    useMapContext();
 
   // Initialize the viewer and canvas
   useEffect(() => {
@@ -35,9 +35,9 @@ const MapContent = () => {
 
     // Create OpenSeadragon viewer with map tiles
     const osdViewer = createOpenSeadragonViewer(viewerRef.current);
-    
-    osdViewer.addHandler('canvas-key', function(event) {
-      event.preventDefaultAction = true;  // Prevent OSD from handling the key
+
+    osdViewer.addHandler("canvas-key", function (event) {
+      event.preventDefaultAction = true; // Prevent OSD from handling the key
     });
 
     // Set up event handlers
@@ -83,6 +83,7 @@ const MapContent = () => {
 
       {/* Toolbar */}
       <Toolbar />
+      <HelpModal />
     </div>
   );
 };
