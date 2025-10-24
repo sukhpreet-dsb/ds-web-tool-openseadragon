@@ -84,6 +84,12 @@ export class CanvasEventHandler implements ICanvasEventHandler {
           this.handleLineMove(e);
         }
 
+        if (e && e.e) {
+          if (!ctx.fabricCanvas) return;
+          const pointer = ctx.fabricCanvas.getScenePoint(e.e);
+          this.lastPointer = new fabric.Point(pointer.x, pointer.y);
+        }
+
         // Handle arrow mouse move for preview
         if (selectedTool === 'arrow') {
           this.handleArrowMove(e);
