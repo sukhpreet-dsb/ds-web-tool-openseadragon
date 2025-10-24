@@ -360,7 +360,7 @@ export class CanvasEventHandler implements ICanvasEventHandler {
     const text = new fabric.IText('Click to edit', {
       left: pointer.x,
       top: pointer.y,
-      fontSize: 20,
+      fontSize: 40,
       fill: 'black',
       selectable: true,
       editable: true,
@@ -695,8 +695,8 @@ export class CanvasEventHandler implements ICanvasEventHandler {
       const customIcon = createCustomIcon(iconType, {
         left: pointer.x,
         top: pointer.y,
-        size: 40, // Default size
-        strokeWidth: 3
+        size: 60, // Increased size for better visibility
+        strokeWidth: 12
       });
 
       // Add the icon to the canvas
