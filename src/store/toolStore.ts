@@ -2,13 +2,15 @@ import { create } from 'zustand';
 import * as fabric from 'fabric';
 import type { CTX } from '@/contexts/MapContext';
 
-export type ToolType = 'select' | 'line' | 'freehand' | 'text' | 'hand' | 'pits' | 'triangle' | 'gp' | 'junction' | '';
+export type ToolType = 'select' | 'line' | 'arrow' | 'freehand' | 'text' | 'hand' | 'pits' | 'triangle' | 'gp' | 'junction' | '';
 
 export interface ToolState {
   selectedTool: ToolType;
   isDrawingMode: boolean;
   isDrawingLine: boolean;
+  isDrawingArrow: boolean;
   currentLine?: fabric.Line;
+  currentArrow?: fabric.Path;
   lineStartPoint?: { x: number; y: number };
 }
 
@@ -16,7 +18,9 @@ export interface ToolActions {
   setSelectedTool: (tool: ToolType) => void;
   setIsDrawingMode: (enabled: boolean) => void;
   setIsDrawingLine: (drawing: boolean) => void;
+  setIsDrawingArrow: (drawing: boolean) => void;
   setCurrentLine: (line?: fabric.Line) => void;
+  setCurrentArrow: (arrow?: fabric.Path) => void;
   setLineStartPoint: (point?: { x: number; y: number }) => void;
   resetTool: (ctx: CTX) => void;
   activateTool: (ctx: CTX, tool: ToolType,) => void;
@@ -29,7 +33,9 @@ export const useToolStore = create<ToolStore>((set, get) => ({
   selectedTool: 'hand',
   isDrawingMode: false,
   isDrawingLine: false,
+  isDrawingArrow: false,
   currentLine: undefined,
+  currentArrow: undefined,
   lineStartPoint: undefined,
 
   // Actions
@@ -39,7 +45,11 @@ export const useToolStore = create<ToolStore>((set, get) => ({
 
   setIsDrawingLine: (drawing) => set({ isDrawingLine: drawing }),
 
+  setIsDrawingArrow: (drawing) => set({ isDrawingArrow: drawing }),
+
   setCurrentLine: (line) => set({ currentLine: line }),
+
+  setCurrentArrow: (arrow) => set({ currentArrow: arrow }),
 
   setLineStartPoint: (point) => set({ lineStartPoint: point }),
 
@@ -66,7 +76,9 @@ export const useToolStore = create<ToolStore>((set, get) => ({
       selectedTool: 'hand',
       isDrawingMode: false,
       isDrawingLine: false,
+      isDrawingArrow: false,
       currentLine: undefined,
+      currentArrow: undefined,
       lineStartPoint: undefined,
     });
   },
@@ -112,6 +124,17 @@ export const useToolStore = create<ToolStore>((set, get) => ({
 
       case 'line':
         // Line tool will be handled by mouse events
+        fabricCanvas.defaultCursor = 'crosshair';
+        fabricCanvas.hoverCursor = 'crosshair';
+        viewer.setMouseNavEnabled(false);
+        // Reset viewer cursor
+        if (viewer.container) {
+          viewer.container.style.cursor = 'default';
+        }
+        break;
+
+      case 'arrow':
+        // Arrow tool will be handled by mouse events
         fabricCanvas.defaultCursor = 'crosshair';
         fabricCanvas.hoverCursor = 'crosshair';
         viewer.setMouseNavEnabled(false);
