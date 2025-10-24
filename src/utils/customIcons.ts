@@ -15,13 +15,13 @@ export function createPlusIcon(options: CustomIconOptions): fabric.Group {
   const {
     left,
     top,
-    size = 60,
+    size = 40,
     color = 'red',
-    strokeWidth = 12
+    strokeWidth = 6
   } = options;
 
   const halfSize = size / 2;
-  const lineLength = size * 0.8; // Make lines 80% of the icon size for better visibility
+  const lineLength = size  - 30;
   const halfLineLength = lineLength / 2;
 
   // Create horizontal line with high stroke

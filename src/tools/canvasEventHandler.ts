@@ -695,8 +695,8 @@ export class CanvasEventHandler implements ICanvasEventHandler {
       const customIcon = createCustomIcon(iconType, {
         left: pointer.x,
         top: pointer.y,
-        size: 60, // Increased size for better visibility
-        strokeWidth: 12
+        size: 40, // Increased size for better visibility
+        strokeWidth: 3
       });
 
       // Add the icon to the canvas
