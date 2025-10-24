@@ -12,6 +12,7 @@ export interface ICanvasEventHandler {
   performRedo(): void;
   destroy(): void;
   setInitialization(enabled: boolean): void;
+  clearClipboard(): void;
 }
 
 export class CanvasEventHandler implements ICanvasEventHandler {
@@ -19,6 +20,12 @@ export class CanvasEventHandler implements ICanvasEventHandler {
   private unsubscribeStore?: () => void;
   private isInitialized: boolean = false;
   private isBatchDelete: boolean = false;
+  private clipboard: fabric.Object[] = [];
+  private clipboardBounds?: { left: number; top: number; width: number; height: number }; // Store original bounds for relative positioning
+  private lastPointer: fabric.Point | null = null;
+  private pasteOffset = 10; // Optional visual offset for multiple pastes
+  private isCopying = false; // Flag to prevent copy/paste conflicts
+
 
   constructor(getCtx: () => CTX) {
     this.getCtx = getCtx;
@@ -69,6 +76,13 @@ export class CanvasEventHandler implements ICanvasEventHandler {
         // Handle line mouse move for preview
         if (selectedTool === 'line') {
           this.handleLineMove(e);
+        }
+
+        // Track last pointer position for future paste location
+        if (e && e.e) {
+          if (!ctx.fabricCanvas) return;
+          const pointer = ctx.fabricCanvas.getScenePoint(e.e);
+          this.lastPointer = new fabric.Point(pointer.x, pointer.y);
         }
       });
     };
@@ -287,13 +301,225 @@ export class CanvasEventHandler implements ICanvasEventHandler {
 
       // Ctrl key -> Select tool (but not when combined with other shortcuts)
       if ((e.ctrlKey || e.metaKey) && !keyStore.previousTool &&
-          e.key !== 'z' && e.key !== 'y' && e.key !== 'Delete' && e.key !== 'Backspace') {
+        e.key !== 'z' && e.key !== 'y' && e.key !== 'Delete' && e.key !== 'Backspace') {
         e.preventDefault();
         keyStore.setPreviousTool(toolStore.selectedTool);
         if (toolStore.selectedTool !== 'select') {
           toolStore.activateTool(ctx, 'select');
         }
       }
+
+      // --- Copy (Ctrl + C) ---
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c' && !this.isCopying) {
+        e.preventDefault();
+        const ctx = this.getCtx();
+        const activeObjects = ctx.fabricCanvas?.getActiveObjects() || [];
+
+        if (activeObjects.length === 0) return;
+
+        this.isCopying = true;
+        this.clipboard = []; // Clear previous clipboard
+
+        // Clone all objects asynchronously
+        const clonePromises = activeObjects.map((obj) => {
+          return new Promise<fabric.Object>((resolve, reject) => {
+            try {
+              obj.clone().then((cloned: fabric.Object) => {
+                // Remove the id to avoid conflicts
+                if ((cloned as any).id) {
+                  delete (cloned as any).id;
+                }
+                // Ensure object is selectable and evented
+                cloned.set({
+                  selectable: true,
+                  evented: true,
+                });
+                resolve(cloned);
+              }).catch((error) => {
+                reject(error);
+              });
+            } catch (error) {
+              reject(error);
+            }
+          });
+        });
+
+        // Wait for all clones to complete
+        Promise.all(clonePromises).then((clonedObjects) => {
+          this.clipboard = clonedObjects;
+
+          // Store original bounds for relative positioning
+          if (activeObjects.length > 1) {
+            const bounds = this.calculateBounds(activeObjects);
+            if (bounds) {
+              this.clipboardBounds = bounds;
+            }
+          } else {
+            this.clipboardBounds = undefined;
+          }
+
+          this.isCopying = false;
+          // Reset paste offset when copying new objects
+          this.pasteOffset = 10;
+        }).catch((error) => {
+          console.error('Error copying objects:', error);
+          this.isCopying = false;
+          this.clipboard = [];
+          this.clipboardBounds = undefined;
+        });
+      }
+
+      // --- Paste (Ctrl + V) ---
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v' && !this.isCopying) {
+        e.preventDefault();
+        const ctx = this.getCtx();
+        if (!ctx.fabricCanvas || this.clipboard.length === 0) return;
+
+        // Clear current selection before pasting
+        ctx.fabricCanvas.discardActiveObject();
+
+        // Determine paste point - use canvas center if no mouse pointer available
+        let pastePoint: fabric.Point;
+        if (this.lastPointer) {
+          pastePoint = new fabric.Point(this.lastPointer.x, this.lastPointer.y);
+        } else {
+          // Fallback to canvas center
+          const canvasCenter = ctx.fabricCanvas.getCenter();
+          pastePoint = new fabric.Point(canvasCenter.left, canvasCenter.top);
+        }
+
+        console.log('Pasting at:', pastePoint, 'Clipboard size:', this.clipboard.length);
+        console.log('Canvas center:', ctx.fabricCanvas.getCenter());
+        console.log('Canvas viewport:', ctx.fabricCanvas.viewportTransform);
+        if (this.clipboardBounds) {
+          console.log('Clipboard bounds:', this.clipboardBounds);
+        }
+
+        // Clone and add all objects from clipboard
+        let pastePromises: Promise<fabric.Object>[];
+
+        if (this.clipboard.length === 1) {
+          // Single object: center on mouse position
+          pastePromises = this.clipboard.map((obj) => {
+            return new Promise<fabric.Object>((resolve, reject) => {
+              try {
+                obj.clone().then((clone: fabric.Object) => {
+                  // Get object dimensions to center it on cursor
+                  const objWidth = clone.width || 0;
+                  const objHeight = clone.height || 0;
+                  const scaleX = clone.scaleX || 1;
+                  const scaleY = clone.scaleY || 1;
+                  const actualWidth = objWidth * scaleX;
+                  const actualHeight = objHeight * scaleY;
+
+                  clone.set({
+                    left: pastePoint.x - actualWidth / 4 + this.pasteOffset,
+                    top: pastePoint.y - actualHeight / 4 + this.pasteOffset,
+                    evented: true,
+                    selectable: true,
+                  });
+
+                  // Remove any existing id to avoid conflicts
+                  if ((clone as any).id) {
+                    delete (clone as any).id;
+                  }
+
+                  clone.setCoords();
+                  ctx.fabricCanvas!.add(clone);
+                  resolve(clone);
+                }).catch((error) => {
+                  reject(error);
+                });
+              } catch (error) {
+                reject(error);
+              }
+            });
+          });
+        } else {
+          // Multiple objects: center the group on cursor, preserve relative positions
+          const offset = this.pasteOffset;
+
+          // Calculate the center of the original selection bounds
+          const boundsLeft = this.clipboardBounds?.left || 0;
+          const boundsTop = this.clipboardBounds?.top || 0;
+          const boundsWidth = this.clipboardBounds?.width || 0;
+          const boundsHeight = this.clipboardBounds?.height || 0;
+          const originalCenterX = boundsLeft + boundsWidth / 2;
+          const originalCenterY = boundsTop + boundsHeight / 2;
+
+          pastePromises = this.clipboard.map((obj, index) => {
+            return new Promise<fabric.Object>((resolve, reject) => {
+              try {
+                obj.clone().then((clone: fabric.Object) => {
+                  // Calculate object's offset from the original center
+                  const originalLeft = clone.left || 0;
+                  const originalTop = clone.top || 0;
+                  const offsetX = originalLeft - originalCenterX;
+                  const offsetY = originalTop - originalCenterY;
+
+                  // Position object relative to cursor position
+                  const newLeft = pastePoint.x + offsetX + offset;
+                  const newTop = pastePoint.y + offsetY + offset;
+
+                  console.log(`Object ${index}: Original (${originalLeft}, ${originalTop}) -> Offset (${offsetX}, ${offsetY}) -> New (${newLeft}, ${newTop})`);
+
+                  clone.set({
+                    left: newLeft,
+                    top: newTop,
+                    evented: true,
+                    selectable: true,
+                  });
+
+                  // Remove any existing id to avoid conflicts
+                  if ((clone as any).id) {
+                    delete (clone as any).id;
+                  }
+
+                  clone.setCoords();
+                  ctx.fabricCanvas!.add(clone);
+                  resolve(clone);
+                }).catch((error) => {
+                  reject(error);
+                });
+              } catch (error) {
+                reject(error);
+              }
+            });
+          });
+        }
+
+        // Wait for all objects to be pasted, then select them
+        Promise.all(pastePromises).then((pastedObjects) => {
+          if (pastedObjects.length > 0) {
+            // Select all pasted objects
+            if (pastedObjects.length === 1) {
+              ctx.fabricCanvas!.setActiveObject(pastedObjects[0]);
+            } else {
+              // Create a selection group for multiple objects
+              const selection = new fabric.ActiveSelection(pastedObjects, {
+                canvas: ctx.fabricCanvas!,
+              });
+              ctx.fabricCanvas!.setActiveObject(selection);
+            }
+
+            ctx.fabricCanvas!.renderAll();
+
+            // Save canvas state (for undo/redo)
+            if (this.isInitialized) {
+              const canvasJSON = ctx.fabricCanvas!.toJSON();
+              const saveState = useCanvasStore.getState().saveState;
+              saveState(canvasJSON);
+            }
+
+            // Increment offset for next paste
+            this.pasteOffset += 20;
+          }
+        }).catch((error) => {
+          console.error('Error pasting objects:', error);
+          ctx.fabricCanvas!.renderAll();
+        });
+      }
+
     };
 
     document.addEventListener('keydown', handleKeyDown);
@@ -642,6 +868,33 @@ export class CanvasEventHandler implements ICanvasEventHandler {
     }
   }
 
+  private calculateBounds(objects: fabric.Object[]): { left: number; top: number; width: number; height: number } | undefined {
+    if (objects.length === 0) return undefined;
+
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+    objects.forEach((obj) => {
+      const bounds = obj.getBoundingRect();
+      minX = Math.min(minX, bounds.left);
+      minY = Math.min(minY, bounds.top);
+      maxX = Math.max(maxX, bounds.left + bounds.width);
+      maxY = Math.max(maxY, bounds.top + bounds.height);
+    });
+
+    return {
+      left: minX,
+      top: minY,
+      width: maxX - minX,
+      height: maxY - minY
+    };
+  }
+
+  public clearClipboard() {
+    this.clipboard = [];
+    this.clipboardBounds = undefined;
+    this.pasteOffset = 10;
+  }
+
   public setInitialization(enabled: boolean) {
     this.isInitialized = enabled;
   }
@@ -665,6 +918,9 @@ export class CanvasEventHandler implements ICanvasEventHandler {
       ctx.fabricCanvas.off('object:removed');
       ctx.fabricCanvas.off('path:created');
     }
+
+    // Clear clipboard
+    this.clearClipboard();
 
     // Unsubscribe from store
     if (this.unsubscribeStore) {
