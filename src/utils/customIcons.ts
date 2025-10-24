@@ -21,8 +21,7 @@ export function createPlusIcon(options: CustomIconOptions): fabric.Group {
   } = options;
 
   const halfSize = size / 2;
-  const lineLength = size  - 30; // Longer lines for pits
-  console.log(lineLength,"lineLength")
+  const lineLength = size  - 30;
   const halfLineLength = lineLength / 2;
 
   // Create horizontal line with high stroke
@@ -34,8 +33,7 @@ export function createPlusIcon(options: CustomIconOptions): fabric.Group {
       selectable: false,
       evented: false,
       originX: 'left',
-      originY: 'top',
-      strokeLineCap: 'round'
+      originY: 'top'
     }
   );
 
@@ -48,8 +46,7 @@ export function createPlusIcon(options: CustomIconOptions): fabric.Group {
       selectable: false,
       evented: false,
       originX: 'left',
-      originY: 'top',
-      strokeLineCap: 'round'
+      originY: 'top'
     }
   );
 

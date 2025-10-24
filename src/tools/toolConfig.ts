@@ -1,5 +1,9 @@
-import { HandGrab, MousePointer2, Pencil, Plus, Slash, Type, Triangle, Circle, Square } from 'lucide-react';
+import { HandGrab, MousePointer2, Pencil, Slash, Type, ArrowUp } from 'lucide-react';
 import type { ToolType } from '../store/toolStore';
+import { TriangleRI } from '@/icons/Triangle';
+import { GP } from '@/icons/Gp';
+import { Pits } from '@/icons/Pits';
+import { JunctionPoint } from '@/icons/JunctionPoint';
 
 export interface ToolConfig {
   id: ToolType;
@@ -24,6 +28,11 @@ export const TOOLS: ToolConfig[] = [
     icon: Slash,
   },
   {
+    id: 'arrow',
+    name: 'Arrow',
+    icon: ArrowUp,
+  },
+  {
     id: 'freehand',
     name: 'Freehand Line',
     icon: Pencil,
@@ -36,22 +45,22 @@ export const TOOLS: ToolConfig[] = [
   {
     id: 'pits',
     name: 'pits',
-    icon: Plus,
+    icon: Pits,
   },
   {
     id: 'triangle',
     name: 'Triangle - R1',
-    icon: Triangle,
+    icon: TriangleRI,
   },
   {
     id: 'gp',
     name: 'GP',
-    icon: Circle,
+    icon: GP,
   },
   {
     id: 'junction',
     name: 'Junction Point',
-    icon: Square,
+    icon: JunctionPoint,
   }
 ];
 
