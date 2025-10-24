@@ -5,6 +5,7 @@ import { useCanvasStore } from '../store/canvasStore';
 import { useKeyStore } from '../store/keyStore';
 import type { CTX } from '../contexts/MapContext';
 import { createCustomIcon } from '../utils/customIcons';
+import { createArrow } from '../utils/arrowHelper';
 
 export interface ICanvasEventHandler {
   deleteSelectedObjects(): void;
@@ -48,6 +49,11 @@ export class CanvasEventHandler implements ICanvasEventHandler {
           this.handleLineClick(e);
         }
 
+        // Handle arrow tool clicks
+        if (selectedTool === 'arrow' && !e.target) {
+          this.handleArrowClick(e);
+        }
+
         // Handle custom icon tool clicks
         if ((selectedTool === 'pits' || selectedTool === 'triangle' || selectedTool === 'gp' || selectedTool === 'junction') && !e.target) {
           this.handleCustomIconClick(e);
@@ -70,6 +76,11 @@ export class CanvasEventHandler implements ICanvasEventHandler {
         if (selectedTool === 'line') {
           this.handleLineMove(e);
         }
+
+        // Handle arrow mouse move for preview
+        if (selectedTool === 'arrow') {
+          this.handleArrowMove(e);
+        }
       });
     };
 
@@ -80,7 +91,7 @@ export class CanvasEventHandler implements ICanvasEventHandler {
 
       ctx.fabricCanvas.on('mouse:up', () => {
         const { selectedTool } = useToolStore.getState();
-        if (selectedTool !== 'line' && selectedTool !== 'freehand') {
+        if (selectedTool !== 'line' && selectedTool !== 'arrow' && selectedTool !== 'freehand') {
           setTimeout(() => {
             if (selectedTool === 'select') {
               ctx.viewer?.setMouseNavEnabled(false);
@@ -107,7 +118,7 @@ export class CanvasEventHandler implements ICanvasEventHandler {
 
       ctx.fabricCanvas.on('selection:cleared', () => {
         const { selectedTool } = useToolStore.getState();
-        if (selectedTool !== 'line' && selectedTool !== 'freehand') {
+        if (selectedTool !== 'line' && selectedTool !== 'arrow' && selectedTool !== 'freehand') {
           if (selectedTool === 'select') {
             ctx.viewer?.setMouseNavEnabled(false);
           } else {
@@ -137,7 +148,7 @@ export class CanvasEventHandler implements ICanvasEventHandler {
       ctx.fabricCanvas.on('object:modified', () => {
         const { selectedTool } = useToolStore.getState();
         setTimeout(() => {
-          if (selectedTool !== 'line' && selectedTool !== 'freehand') {
+          if (selectedTool !== 'line' && selectedTool !== 'arrow' && selectedTool !== 'freehand') {
             if (selectedTool === 'select') {
               ctx.viewer?.setMouseNavEnabled(false);
             } else {
@@ -252,8 +263,12 @@ export class CanvasEventHandler implements ICanvasEventHandler {
       const isEditingText = activeObject && activeObject.type === 'i-text' && (activeObject as fabric.IText).isEditing;
 
       // Escape key to cancel line drawing
-      if (e.key === 'Escape' && toolStore.isDrawingLine) {
-        this.cancelLineDrawing();
+      if (e.key === 'Escape' && (toolStore.isDrawingLine || toolStore.isDrawingArrow)) {
+        if (toolStore.isDrawingLine) {
+          this.cancelLineDrawing();
+        } else if (toolStore.isDrawingArrow) {
+          this.cancelArrowDrawing();
+        }
       }
 
       // Delete keys - only if not editing text
@@ -479,6 +494,182 @@ export class CanvasEventHandler implements ICanvasEventHandler {
       // Reset drawing state
       store.setIsDrawingLine(false);
       store.setCurrentLine(undefined);
+      store.setLineStartPoint(undefined);
+
+      ctx.fabricCanvas?.renderAll();
+    }
+  }
+
+  private handleArrowClick(e: TEvent) {
+    const ctx = this.getCtx();
+    if (!ctx.fabricCanvas) return;
+
+    const pointer = ctx.fabricCanvas.getScenePoint(e.e);
+    const store = useToolStore.getState();
+    const isShiftPressed = (e.e as MouseEvent).shiftKey;
+
+    if (!store.isDrawingArrow) {
+      // Start drawing a new arrow - set the start point
+      store.setLineStartPoint({ x: pointer.x, y: pointer.y });
+      store.setIsDrawingArrow(true);
+
+      // Create a temporary arrow for preview
+      const arrow = createArrow(pointer.x, pointer.y, pointer.x, pointer.y, {
+        stroke: 'black',
+        strokeWidth: 8,
+        arrowSize: 20,
+        fill: 'black'
+      });
+
+      // Make the arrow non-interactive during preview
+      arrow.set({
+        selectable: false,
+        evented: false,
+      });
+
+      ctx.fabricCanvas.add(arrow);
+      store.setCurrentArrow(arrow);
+    } else {
+      // Continue drawing or finish the arrow
+      if (store.currentArrow && store.lineStartPoint) {
+        if (isShiftPressed) {
+          // Shift + Click: Continue the arrow from the current endpoint
+          // Finalize the current arrow
+          const finalArrow = createArrow(
+            store.lineStartPoint.x,
+            store.lineStartPoint.y,
+            pointer.x,
+            pointer.y,
+            {
+              stroke: 'black',
+              strokeWidth: 8,
+              arrowSize: 20,
+              fill: 'black'
+            }
+          );
+
+          // Remove the temporary arrow and add the final one
+          ctx.fabricCanvas.remove(store.currentArrow);
+          ctx.fabricCanvas.add(finalArrow);
+
+          // Save canvas state for this segment
+          if (this.isInitialized) {
+            const canvasJSON = ctx.fabricCanvas!.toJSON();
+            const saveState = useCanvasStore.getState().saveState;
+            saveState(canvasJSON);
+          }
+
+          // Start a new arrow segment from the current endpoint
+          store.setLineStartPoint({ x: pointer.x, y: pointer.y });
+          store.setIsDrawingArrow(true);
+
+          // Create a new temporary arrow for the next segment
+          const newArrow = createArrow(pointer.x, pointer.y, pointer.x, pointer.y, {
+            stroke: 'black',
+            strokeWidth: 8,
+            arrowSize: 20,
+            fill: 'black'
+          });
+
+          // Make the new arrow non-interactive during preview
+          newArrow.set({
+            selectable: false,
+            evented: false,
+          });
+
+          ctx.fabricCanvas.add(newArrow);
+          store.setCurrentArrow(newArrow);
+
+          ctx.fabricCanvas.renderAll();
+        } else {
+          // Regular Click: End the arrow at the clicked point
+          const finalArrow = createArrow(
+            store.lineStartPoint.x,
+            store.lineStartPoint.y,
+            pointer.x,
+            pointer.y,
+            {
+              stroke: 'black',
+              strokeWidth: 8,
+              arrowSize: 20,
+              fill: 'black'
+            }
+          );
+
+          // Remove the temporary arrow and add the final one
+          ctx.fabricCanvas.remove(store.currentArrow);
+          ctx.fabricCanvas.add(finalArrow);
+
+          // Reset drawing state
+          store.setIsDrawingArrow(false);
+          store.setCurrentArrow(undefined);
+          store.setLineStartPoint(undefined);
+
+          ctx.fabricCanvas.renderAll();
+          if (this.isInitialized) {
+            const canvasJSON = ctx.fabricCanvas!.toJSON();
+            const saveState = useCanvasStore.getState().saveState;
+            saveState(canvasJSON);
+          }
+
+          // Switch to select tool after adding arrow
+          setTimeout(() => {
+            useToolStore.getState().activateTool(ctx, 'select');
+          }, 100);
+        }
+      }
+    }
+  }
+
+  private handleArrowMove(e: TEvent) {
+    const ctx = this.getCtx();
+    if (!ctx.fabricCanvas) return;
+
+    const store = useToolStore.getState();
+
+    if (store.isDrawingArrow && store.currentArrow && store.lineStartPoint) {
+      const pointer = ctx.fabricCanvas.getScenePoint(e.e);
+
+      // Create updated arrow
+      const updatedArrow = createArrow(
+        store.lineStartPoint.x,
+        store.lineStartPoint.y,
+        pointer.x,
+        pointer.y,
+        {
+          stroke: 'black',
+          strokeWidth: 8,
+          arrowSize: 20,
+          fill: 'black'
+        }
+      );
+
+      // Keep the non-interactive properties
+      updatedArrow.set({
+        selectable: false,
+        evented: false,
+      });
+
+      // Remove old arrow and add updated one
+      ctx.fabricCanvas.remove(store.currentArrow);
+      ctx.fabricCanvas.add(updatedArrow);
+      store.setCurrentArrow(updatedArrow);
+
+      ctx.fabricCanvas.renderAll();
+    }
+  }
+
+  private cancelArrowDrawing() {
+    const ctx = this.getCtx();
+    const store = useToolStore.getState();
+
+    if (store.isDrawingArrow && store.currentArrow) {
+      // Remove the temporary arrow
+      ctx.fabricCanvas?.remove(store.currentArrow);
+
+      // Reset drawing state
+      store.setIsDrawingArrow(false);
+      store.setCurrentArrow(undefined);
       store.setLineStartPoint(undefined);
 
       ctx.fabricCanvas?.renderAll();

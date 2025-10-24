@@ -1,4 +1,4 @@
-import { HandGrab, MousePointer2, Pencil, Plus, Slash, Type, Triangle, Circle, Square } from 'lucide-react';
+import { HandGrab, MousePointer2, Pencil, Plus, Slash, Type, Triangle, Circle, Square, ArrowUp } from 'lucide-react';
 import type { ToolType } from '../store/toolStore';
 
 export interface ToolConfig {
@@ -22,6 +22,11 @@ export const TOOLS: ToolConfig[] = [
     id: 'line',
     name: 'Line',
     icon: Slash,
+  },
+  {
+    id: 'arrow',
+    name: 'Arrow',
+    icon: ArrowUp,
   },
   {
     id: 'freehand',

@@ -19,7 +19,7 @@ const Toolbar = () => {
   const ctx = useMapContext();
 
   const handleToolClick = (toolId: string) => {
-    activateTool(ctx, toolId as "select" | "line" | "text" | "hand" | "");
+    activateTool(ctx, toolId as "select" | "line" | "arrow" | "text" | "hand" | "");
   };
 
   return (
