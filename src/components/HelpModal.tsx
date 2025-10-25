@@ -30,14 +30,14 @@ export function HelpModal() {
               <CircleQuestionMark />
             </Button>
           </DialogTrigger>
-          <DialogContent className="md:max-w-2xl lg:max-w-[900px] h-[91%] overflow-auto py-10">
+          <DialogContent className="md:max-w-2xl lg:max-w-[900px] h-[91%] md:h-[550px] overflow-auto ">
             <DialogHeader>
               <DialogTitle className="text-xl font-semibold">
                 Keyboard shortcuts
               </DialogTitle>
-              <hr className="border-t border-zinc-200 my-4" />
+              <hr className="border-t border-zinc-200 mt-4" />
             </DialogHeader>
-            <div className="w-full ">
+            <div className="w-full">
               {/* <h2 className="text-xl font-semibold mb-5">Keyboard shortcuts</h2> */}
               <div className="w-full flex flex-col md:flex-row gap-10">
                 <div id="tools" className="w-full md:w-1/2">

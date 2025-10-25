@@ -1,4 +1,4 @@
-import { HandGrab, MousePointer2, Pencil, Slash, Type, ArrowUp } from 'lucide-react';
+import { HandGrab, MousePointer2, Pencil, Slash, Type } from 'lucide-react';
 import type { ToolType } from '../store/toolStore';
 import { TriangleRI } from '@/icons/Triangle';
 import { GP } from '@/icons/Gp';
