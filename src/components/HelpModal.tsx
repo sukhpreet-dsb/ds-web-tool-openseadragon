@@ -6,20 +6,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { TOOLS } from "@/tools/toolConfig";
 import { CircleQuestionMark } from "lucide-react";
 
-const tools = [
-  "Select",
-  "Hand",
-  "Line",
-  "FreeHand",
-  "Text",
-  "ArrowLine",
-  "Triangle-R",
-  "Gp",
-  "Juction point",
-  "Pits",
-];
 
 const shortcuts = [
   { title: "Copy", value: "ctrl c", symbol: "+" },
@@ -54,11 +43,16 @@ export function HelpModal() {
                 <div id="tools" className="w-full md:w-1/2">
                   <h3 className="text-lg font-medium mb-3">Tools</h3>
                   <ul className="border border-zinc-300 rounded-md divide-y divide-zinc-200">
-                    {tools.map((tool) => (
-                      <li key={tool} className="py-2 px-4 flex justify-between items-center text-zinc-800">
-                        {tool}
+                    {TOOLS.map((tool) => {
+                      const Icon = tool.icon
+                     return (
+                      <li key={tool.id} className="py-2 px-4 flex justify-between items-center text-zinc-800">
+                        {tool.name}
+                        <span>
+                          <Icon/>
+                        </span>
                       </li>
-                    ))}
+                    )})}
                   </ul>
                 </div>
                 <div id="shotcuts" className="w-full md:w-1/2 ">

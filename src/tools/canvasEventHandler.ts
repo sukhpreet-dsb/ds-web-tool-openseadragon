@@ -225,7 +225,7 @@ export class CanvasEventHandler implements ICanvasEventHandler {
         // if (!initialState) {
         //   saveState(ctx.fabricCanvas!.toJSON());
         // }
-      }, 3000);
+      }, 1000);
     };
 
     // Set up all event handlers when canvas is available
@@ -305,7 +305,7 @@ export class CanvasEventHandler implements ICanvasEventHandler {
       const keyStore = useKeyStore.getState();
 
       // Space key -> Hand tool
-      if ((e.key === " " || e.code === "Space" || e.keyCode === 32) && !keyStore.previousTool) {
+      if ((e.key === " " || e.code === "Space" || e.keyCode === 32) && !keyStore.previousTool && !isEditingText) {
         e.preventDefault();
         keyStore.setPreviousTool(toolStore.selectedTool);
         if (toolStore.selectedTool !== 'hand') {

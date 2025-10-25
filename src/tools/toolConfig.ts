@@ -27,11 +27,11 @@ export const TOOLS: ToolConfig[] = [
     name: 'Line',
     icon: Slash,
   },
-  {
-    id: 'arrow',
-    name: 'Arrow',
-    icon: ArrowUp,
-  },
+  // {
+  //   id: 'arrow',
+  //   name: 'Arrow',
+  //   icon: ArrowUp,
+  // },
   {
     id: 'freehand',
     name: 'Freehand Line',
