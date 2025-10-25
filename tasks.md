@@ -6,11 +6,11 @@
 
 ## Persistence
 1. persist fabric drawings. ✅
-2. delete selected drawings.
+2. delete selected drawings. ✅
 3. undo/redo. ✅
 
 ## custom tools
-1. add a custom tool to draw a plus sign.
+1. add a custom tool to draw a plus sign. ✅
 
 ## Enhancements
 1. copy/paste drawings.
