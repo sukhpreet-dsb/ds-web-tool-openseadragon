@@ -1,10 +1,7 @@
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
-  DialogClose,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -44,7 +41,7 @@ export function HelpModal() {
               <CircleQuestionMark />
             </Button>
           </DialogTrigger>
-          <DialogContent className="md:max-w-2xl lg:max-w-[900px] overflow-auto py-10">
+          <DialogContent className="md:max-w-2xl lg:max-w-[900px] h-[91%] overflow-auto py-10">
             <DialogHeader>
               <DialogTitle className="text-xl font-semibold">
                 Keyboard shortcuts
@@ -58,7 +55,7 @@ export function HelpModal() {
                   <h3 className="text-lg font-medium mb-3">Tools</h3>
                   <ul className="border border-zinc-300 rounded-md divide-y divide-zinc-200">
                     {tools.map((tool) => (
-                      <li className="py-2 px-4 flex justify-between items-center text-zinc-800">
+                      <li key={tool} className="py-2 px-4 flex justify-between items-center text-zinc-800">
                         {tool}
                       </li>
                     ))}
@@ -68,7 +65,7 @@ export function HelpModal() {
                   <h3 className="text-lg font-medium mb-3">Shortcuts</h3>
                   <ul className="border border-zinc-300 rounded-md divide-y divide-zinc-200">
                     {shortcuts.map((shortcut) => (
-                      <li className="py-2 px-4 flex justify-between items-center">
+                      <li key={shortcut.title} className="py-2 px-4 flex justify-between items-center">
                         <span className="text-zinc-800">{shortcut.title}</span>{" "}
                         <span className="flex gap-2 text-zinc-600">
                           <span className="bg-[#e0dfff] px-2 py-0.5 rounded-sm">
