@@ -292,18 +292,19 @@ export class CanvasEventHandler implements ICanvasEventHandler {
       if ((e.key === " " || e.code === "Space" || e.keyCode === 32) && !keyStore.previousTool && !isEditingText) {
         e.preventDefault();
         keyStore.setPreviousTool(toolStore.selectedTool);
-        if (toolStore.selectedTool !== 'hand') {
-          toolStore.activateTool(ctx, 'hand');
+        if (toolStore.selectedTool !== 'select') {
+          toolStore.activateTool(ctx, 'select');
         }
       }
 
       // Ctrl key -> Select tool (but not when combined with other shortcuts)
       if ((e.ctrlKey || e.metaKey) && !keyStore.previousTool &&
         e.key !== 'z' && e.key !== 'y' && e.key !== 'Delete' && e.key !== 'Backspace') {
+
         e.preventDefault();
         keyStore.setPreviousTool(toolStore.selectedTool);
-        if (toolStore.selectedTool !== 'select') {
-          toolStore.activateTool(ctx, 'select');
+        if (toolStore.selectedTool !== 'hand') {
+          toolStore.activateTool(ctx, 'hand');
         }
       }
       // --- Copy (Ctrl + C) ---
@@ -330,38 +331,38 @@ export class CanvasEventHandler implements ICanvasEventHandler {
         // Clone and add all objects from clipboard
         let pastePromises: Promise<fabric.Object>[];
 
-          // Single object: position using calculated differences
-          pastePromises = copiedObjs.map((obj) => {
-            return new Promise<fabric.Object>((resolve, reject) => {
-              try {
-                obj.clone().then((clone: fabric.Object) => {
-                  // Position using the calculated differences
-                  clone.set({
-                    left: obj.left + leftDiff,
-                    top: obj.top + topDiff,
-                    evented: true,
-                    selectable: true,
-                  });
-
-                  // Remove any existing id to avoid conflicts
-                  if ((clone as any).id) {
-                    delete (clone as any).id;
-                  }
-
-                  clone.setCoords();
-                  ctx.fabricCanvas!.add(clone);
-                  resolve(clone);
-                }).catch((error) => {
-                  reject(error);
+        // Single object: position using calculated differences
+        pastePromises = copiedObjs.map((obj) => {
+          return new Promise<fabric.Object>((resolve, reject) => {
+            try {
+              obj.clone().then((clone: fabric.Object) => {
+                // Position using the calculated differences
+                clone.set({
+                  left: obj.left + leftDiff,
+                  top: obj.top + topDiff,
+                  evented: true,
+                  selectable: true,
                 });
-              } catch (error) {
-                reject(error);
-              }
-            });
-          });
-        
 
-          this.isBatchPasting = true
+                // Remove any existing id to avoid conflicts
+                if ((clone as any).id) {
+                  delete (clone as any).id;
+                }
+
+                clone.setCoords();
+                ctx.fabricCanvas!.add(clone);
+                resolve(clone);
+              }).catch((error) => {
+                reject(error);
+              });
+            } catch (error) {
+              reject(error);
+            }
+          });
+        });
+
+
+        this.isBatchPasting = true
         // Wait for all objects to be pasted, then select them
         Promise.all(pastePromises).then((pastedObjects) => {
           if (pastedObjects.length > 0) {
@@ -388,7 +389,7 @@ export class CanvasEventHandler implements ICanvasEventHandler {
         }).catch((error) => {
           console.error('Error pasting objects:', error);
           ctx.fabricCanvas!.renderAll();
-        }).finally(()=>{
+        }).finally(() => {
           this.isBatchPasting = false
         })
       }
