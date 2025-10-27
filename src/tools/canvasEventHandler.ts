@@ -213,15 +213,10 @@ export class CanvasEventHandler implements ICanvasEventHandler {
       ctx.fabricCanvas.on('object:added', handleCanvasChange);
       ctx.fabricCanvas.on('object:modified', handleCanvasChange);
       ctx.fabricCanvas.on('object:removed', handleCanvasChange);
-      // ctx.fabricCanvas.on('path:created', handleCanvasChange);
 
       // Initialize after a delay to allow initial GeoJSON loading
       setTimeout(() => {
         this.isInitialized = true;
-        // // Save initial state if no persisted state exists
-        // if (!initialState) {
-        //   saveState(ctx.fabricCanvas!.toJSON());
-        // }
       }, 1000);
     };
 
@@ -251,16 +246,8 @@ export class CanvasEventHandler implements ICanvasEventHandler {
   }
 
   private subscribeToStoreChanges() {
-    // Subscribe to tool changes if needed for future enhancements
-    // const storeUnsubscribe = useToolStore.subscribe((state) => {
-    //   console.log(`Tool changed to ${state.selectedTool}`);
-    // });
-
     // Setup keyboard events
     this.setupKeyboardEvents();
-
-    // Store cleanup function
-    // this.unsubscribeStore = storeUnsubscribe;
   }
 
   private setupKeyboardEvents() {
@@ -321,34 +308,24 @@ export class CanvasEventHandler implements ICanvasEventHandler {
       }
       // --- Copy (Ctrl + C) ---
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c' && !isEditingText) {
-        console.log("Copy")
         e.preventDefault();
         const ctx = this.getCtx();
         const activeObjects = ctx.fabricCanvas?.getActiveObjects() || [];
 
         if (activeObjects.length === 0) return;
-        console.log("Active Obj : ", activeObjects)
         useKeyStore.getState().setCopiedObj(activeObjects)
       }
       // --- Paste (Ctrl + V) ---
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v' && !isEditingText) {
-        console.log("Paste")
-        // log copied objects here from the store
         const copiedObjs = useKeyStore.getState().copiedObj
-        console.log("copied obj : ", copiedObjs)
 
-        if (!ctx.fabricCanvas || !this.lastPointer) {
+        if (!ctx.fabricCanvas || !this.lastPointer || !copiedObjs.length) {
           return
         }
 
-        const oneObj = copiedObjs[0];
-
-        console.log(this.lastPointer)
-        const topDiff = this.lastPointer.y - oneObj.top
-        const leftDiff = this.lastPointer.x - oneObj.left
-
-        console.log(topDiff);
-        console.log(leftDiff);
+        const firstCopiedObj = copiedObjs[0];
+        const topDiff = this.lastPointer.y - firstCopiedObj.top
+        const leftDiff = this.lastPointer.x - firstCopiedObj.left
 
         // Clone and add all objects from clipboard
         let pastePromises: Promise<fabric.Object>[];

@@ -1,4 +1,4 @@
-import { HandGrab, MousePointer2, Pencil, Slash, Type } from 'lucide-react';
+import { ArrowUp, HandGrab, MousePointer2, Pencil, Slash, Type } from 'lucide-react';
 import type { ToolType } from '../store/toolStore';
 import { TriangleRI } from '@/icons/Triangle';
 import { GP } from '@/icons/Gp';
@@ -27,11 +27,11 @@ export const TOOLS: ToolConfig[] = [
     name: 'Line',
     icon: Slash,
   },
-  // {
-  //   id: 'arrow',
-  //   name: 'Arrow',
-  //   icon: ArrowUp,
-  // },
+  {
+    id: 'arrow',
+    name: 'Arrow',
+    icon: ArrowUp,
+  },
   {
     id: 'freehand',
     name: 'Freehand Line',
