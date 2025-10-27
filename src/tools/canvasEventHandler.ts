@@ -59,7 +59,7 @@ export class CanvasEventHandler implements ICanvasEventHandler {
         }
 
         // Handle custom icon tool clicks
-        if ((selectedTool === 'pits' || selectedTool === 'triangle' || selectedTool === 'gp' || selectedTool === 'junction') && !e.target) {
+        if ((selectedTool === 'pits' || selectedTool === 'triangle' || selectedTool === 'gp' || selectedTool === 'junction' || selectedTool === 'tower') && !e.target) {
           this.handleCustomIconClick(e);
         }
       });
@@ -101,7 +101,7 @@ export class CanvasEventHandler implements ICanvasEventHandler {
 
       ctx.fabricCanvas.on('mouse:up', () => {
         const { selectedTool } = useToolStore.getState();
-        if (selectedTool !== 'line' && selectedTool !== 'arrow' && selectedTool !== 'freehand') {
+        if (selectedTool !== 'line' && selectedTool !== 'arrow' && selectedTool !== 'freehand' && selectedTool !== 'tower') {
           setTimeout(() => {
             if (selectedTool === 'select') {
               ctx.viewer?.setMouseNavEnabled(false);
@@ -128,7 +128,7 @@ export class CanvasEventHandler implements ICanvasEventHandler {
 
       ctx.fabricCanvas.on('selection:cleared', () => {
         const { selectedTool } = useToolStore.getState();
-        if (selectedTool !== 'line' && selectedTool !== 'arrow' && selectedTool !== 'freehand') {
+        if (selectedTool !== 'line' && selectedTool !== 'arrow' && selectedTool !== 'freehand' && selectedTool !== 'tower') {
           if (selectedTool === 'select') {
             ctx.viewer?.setMouseNavEnabled(false);
           } else {
@@ -158,7 +158,7 @@ export class CanvasEventHandler implements ICanvasEventHandler {
       ctx.fabricCanvas.on('object:modified', () => {
         const { selectedTool } = useToolStore.getState();
         setTimeout(() => {
-          if (selectedTool !== 'line' && selectedTool !== 'arrow' && selectedTool !== 'freehand') {
+          if (selectedTool !== 'line' && selectedTool !== 'arrow' && selectedTool !== 'freehand' && selectedTool !== 'tower') {
             if (selectedTool === 'select') {
               ctx.viewer?.setMouseNavEnabled(false);
             } else {
@@ -397,6 +397,42 @@ export class CanvasEventHandler implements ICanvasEventHandler {
 
     document.addEventListener('keydown', handleKeyDown);
 
+    // Mouse wheel button (middle button) handler
+    const handleMouseDown = (e: MouseEvent) => {
+      const toolStore = useToolStore.getState();
+      const keyStore = useKeyStore.getState();
+      const ctx = this.getCtx();
+
+      // Middle mouse button (button 1) -> Hand tool
+      if (e.button === 1 && !keyStore.previousTool) {
+        // Don't prevent default to allow OpenSeadragon panning
+        keyStore.setPreviousTool(toolStore.selectedTool);
+        if (toolStore.selectedTool !== 'hand') {
+          toolStore.activateTool(ctx, 'hand');
+        }
+      }
+    };
+
+    const handleMouseUp = (e: MouseEvent) => {
+      const toolStore = useToolStore.getState();
+      const keyStore = useKeyStore.getState();
+      const ctx = this.getCtx();
+
+      // Restore previous tool when middle mouse button is released
+      if (e.button === 1 && keyStore.previousTool) {
+        // Don't prevent default to avoid interfering with other mouse interactions
+        if (keyStore.previousTool && keyStore.previousTool !== 'hand') {
+          toolStore.activateTool(ctx, keyStore.previousTool);
+          keyStore.setPreviousTool(null);
+          keyStore.resetKeyState();
+        }
+      }
+    };
+
+    // Add mouse event listeners for middle mouse button
+    document.addEventListener('mousedown', handleMouseDown);
+    document.addEventListener('mouseup', handleMouseUp);
+
     const handleKeyUp = (e: KeyboardEvent) => {
       const toolStore = useToolStore.getState();
       const keyStore = useKeyStore.getState();
@@ -430,6 +466,8 @@ export class CanvasEventHandler implements ICanvasEventHandler {
     this.unsubscribeStore = () => {
       document.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('keyup', handleKeyUp);
+      document.removeEventListener('mousedown', handleMouseDown);
+      document.removeEventListener('mouseup', handleMouseUp);
       if (originalUnsubscribe) {
         originalUnsubscribe();
       }
@@ -768,9 +806,9 @@ export class CanvasEventHandler implements ICanvasEventHandler {
     const store = useToolStore.getState();
 
     // Get the selected tool type
-    const iconType = store.selectedTool as 'pits' | 'triangle' | 'gp' | 'junction';
+    const iconType = store.selectedTool as 'pits' | 'triangle' | 'gp' | 'junction' | 'tower';
 
-    if (iconType !== 'pits' && iconType !== 'triangle' && iconType !== 'gp' && iconType !== 'junction') {
+    if (iconType !== 'pits' && iconType !== 'triangle' && iconType !== 'gp' && iconType !== 'junction' && iconType !== 'tower') {
       return;
     }
 
