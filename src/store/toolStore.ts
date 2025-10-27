@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import * as fabric from 'fabric';
 import type { CTX } from '@/contexts/MapContext';
 
-export type ToolType = 'select' | 'line' | 'arrow' | 'freehand' | 'text' | 'hand' | 'pits' | 'triangle' | 'gp' | 'junction' | '';
+export type ToolType = 'select' | 'line' | 'arrow' | 'freehand' | 'text' | 'hand' | 'pits' | 'triangle' | 'gp' | 'junction' | 'tower' | '';
 
 export interface ToolState {
   selectedTool: ToolType;
@@ -159,6 +159,7 @@ export const useToolStore = create<ToolStore>((set, get) => ({
       case 'triangle':
       case 'gp':
       case 'junction':
+      case 'tower':
         // Custom icon tools will be handled by mouse events
         fabricCanvas.defaultCursor = 'crosshair';
         fabricCanvas.hoverCursor = 'crosshair';

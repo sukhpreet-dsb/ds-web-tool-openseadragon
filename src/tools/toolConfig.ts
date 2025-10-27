@@ -4,6 +4,7 @@ import { TriangleRI } from '@/icons/Triangle';
 import { GP } from '@/icons/Gp';
 import { Pits } from '@/icons/Pits';
 import { JunctionPoint } from '@/icons/JunctionPoint';
+import { Tower } from '@/icons/Tower';
 
 export interface ToolConfig {
   id: ToolType;
@@ -61,6 +62,11 @@ export const TOOLS: ToolConfig[] = [
     id: 'junction',
     name: 'Junction Point',
     icon: JunctionPoint,
+  },
+  {
+    id: 'tower',
+    name: 'Tower',
+    icon: Tower,
   }
 ];
 
