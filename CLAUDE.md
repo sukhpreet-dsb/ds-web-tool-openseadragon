@@ -173,3 +173,4 @@ The application includes a comprehensive undo/redo system with persistent storag
 - Vite for development server and production builds
 - TypeScript compilation with `tsc -b` before Vite build
 - React plugin for Vite with Fast Refresh support
+- Use Context7 to check up-to-date docs when needed for implementing new libraries or frameworks, or adding features using them.
