@@ -16,6 +16,7 @@ import { useMapContext, MapProvider } from "../contexts/MapContext";
 import { CanvasEventHandler } from "../tools/canvasEventHandler";
 import Toolbar from "../components/Toolbar";
 import { HelpModal } from "@/components/HelpModal";
+import MapView from "@/components/MapView";
 
 const cleanGeoJson = fixGeoJsonCoordinateTypes(
   geojson as unknown as FeatureCollection
@@ -83,7 +84,12 @@ const MapContent = () => {
 
       {/* Toolbar */}
       <Toolbar />
+
+      {/* Shortcuts */}
       <HelpModal />
+
+      {/* Map View Switcher */}
+      <MapView />
     </div>
   );
 };
