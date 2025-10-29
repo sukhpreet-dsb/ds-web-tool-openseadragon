@@ -9,14 +9,13 @@ import {
 import { TOOLS } from "@/tools/toolConfig";
 import { CircleQuestionMark } from "lucide-react";
 
-
 const shortcuts = [
   { title: "Copy", value: "ctrl c", symbol: "+" },
   { title: "Paste", value: "ctrl v", symbol: "+" },
   { title: "Undo", value: "ctrl z", symbol: "+" },
   { title: "Redo", value: "ctrl y", symbol: "+" },
-  { title: "Select", value: "hold ctrl" },
-  { title: "Move", value: "hold space" },
+  { title: "Select", value: "hold space" },
+  { title: "Move", value: "hold ctrl" },
   { title: "Delete", value: "backspace delete", symbol: "or" },
 ];
 
@@ -44,22 +43,29 @@ export function HelpModal() {
                   <h3 className="text-lg font-medium mb-3">Tools</h3>
                   <ul className="border border-zinc-300 rounded-md divide-y divide-zinc-200">
                     {TOOLS.map((tool) => {
-                      const Icon = tool.icon
-                     return (
-                      <li key={tool.id} className="py-2 px-4 flex justify-between items-center text-zinc-800">
-                        {tool.name}
-                        <span>
-                          <Icon/>
-                        </span>
-                      </li>
-                    )})}
+                      const Icon = tool.icon;
+                      return (
+                        <li
+                          key={tool.id}
+                          className="py-2 px-4 flex justify-between items-center text-zinc-800"
+                        >
+                          {tool.name}
+                          <span>
+                            <Icon />
+                          </span>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
                 <div id="shotcuts" className="w-full md:w-1/2 ">
                   <h3 className="text-lg font-medium mb-3">Shortcuts</h3>
                   <ul className="border border-zinc-300 rounded-md divide-y divide-zinc-200">
                     {shortcuts.map((shortcut) => (
-                      <li key={shortcut.title} className="py-2 px-4 flex justify-between items-center">
+                      <li
+                        key={shortcut.title}
+                        className="py-2 px-4 flex justify-between items-center"
+                      >
                         <span className="text-zinc-800">{shortcut.title}</span>{" "}
                         <span className="flex gap-2 text-zinc-600">
                           <span className="bg-[#e0dfff] px-2 py-0.5 rounded-sm">

@@ -45,7 +45,7 @@ export const TOOLS: ToolConfig[] = [
   },
   {
     id: 'pits',
-    name: 'pits',
+    name: 'Pits',
     icon: Pits,
   },
   {
