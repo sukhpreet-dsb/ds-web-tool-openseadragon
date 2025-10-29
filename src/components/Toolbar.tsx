@@ -35,6 +35,7 @@ const Toolbar = () => {
           align="start"
           onInteractOutside={(e) => e.preventDefault()}
           onPointerDown={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
         >
           <DropdownMenuLabel className="px-3">Tools</DropdownMenuLabel>
           <DropdownMenuGroup className="my-2 px-3">
