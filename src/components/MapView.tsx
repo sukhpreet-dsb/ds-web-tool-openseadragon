@@ -5,30 +5,38 @@ import { useMapContext } from "../contexts/MapContext";
 import {
   createMapboxSatelliteTileSource,
   createMapboxSatelliteStreetsTileSource,
+  createMapboxStreetsTileSource,
 } from "../utils/satellite-tile-sources";
-import { Layers, Map, Satellite, MapPin } from "lucide-react";
+import { Layers, Map, Satellite } from "lucide-react";
+import { intelligentZoomForMapSwitch } from "../utils/coordinate-conversion";
+import geojson from "../assets/file2.json";
+import { fixGeoJsonCoordinateTypes } from "../utils/geojson-coordinate";
+import type { FeatureCollection } from "../types";
+
+// Clean GeoJSON data for fallback zoom
+const cleanGeoJson = fixGeoJsonCoordinateTypes(
+  geojson as unknown as FeatureCollection
+);
 
 type MapViewType = "normal" | "satellite" | "satellite-streets";
 
 interface MapViewOption {
   value: MapViewType;
   label: string;
-  icon: React.ComponentType<any>;
-  description: string;
+  icon: React.ComponentType<{ className?: string }>;
 }
 
 const MapView = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [currentView, setCurrentView] = useState<MapViewType>("normal");
   const [isLoading, setIsLoading] = useState(false);
-  const { viewer } = useMapContext();
+  const { viewer, fabricCanvas } = useMapContext();
 
   const viewOptions: MapViewOption[] = [
     {
       value: "normal",
-      label: "Street Map",
+      label: "Street",
       icon: Map,
-      description: "OpenStreetMap view",
     },
     // {
     //   value: "satellite",
@@ -38,9 +46,8 @@ const MapView = () => {
     // },
     {
       value: "satellite-streets",
-      label: "Satellite + Streets",
-      icon: MapPin,
-      description: "Satellite with street",
+      label: "Satellite",
+      icon: Satellite,
     },
   ];
 
@@ -58,18 +65,13 @@ const MapView = () => {
 
     try {
       // Get Mapbox token from environment variables
-      const mapboxToken =
-        import.meta.env.VITE_MAPBOX_KEY ||
-        import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
+      const mapboxToken = import.meta.env.VITE_MAPBOX_KEY;
 
-      // Validate token for satellite views
-      if (
-        (viewType === "satellite" || viewType === "satellite-streets") &&
-        !mapboxToken
-      ) {
-        console.error("Mapbox access token is required for satellite view.");
+      // Validate token for all views (now using Mapbox for everything)
+      if (!mapboxToken) {
+        console.error("Mapbox access token is required for all map views.");
         alert(
-          "Satellite view requires a Mapbox access token.\n\n" +
+          "Map view requires a Mapbox access token.\n\n" +
             "Please add VITE_MAPBOX_KEY to your .env file.\n" +
             "Get a free token at https://account.mapbox.com/"
         );
@@ -83,7 +85,14 @@ const MapView = () => {
       viewer.world.removeAll();
 
       // Prepare tile source based on view type
-      let tileSource: any;
+      let tileSource: {
+        height: number;
+        width: number;
+        tileSize: number;
+        minLevel: number;
+        maxLevel: number;
+        getTileUrl: (level: number, x: number, y: number) => string;
+      };
 
       switch (viewType) {
         case "satellite":
@@ -96,9 +105,8 @@ const MapView = () => {
 
         case "normal":
         default:
-          tileSource = {
-            type: "openstreetmaps",
-          };
+          // Use Mapbox Streets for consistency with satellite views
+          tileSource = createMapboxStreetsTileSource(mapboxToken!);
           break;
       }
 
@@ -106,11 +114,18 @@ const MapView = () => {
       viewer.addTiledImage({
         tileSource: tileSource,
         index: 0,
-        success: (event) => {
+        success: () => {
           console.log(`Successfully switched to ${viewType} view`);
           setCurrentView(viewType);
           setIsLoading(false);
           setIsOpen(false);
+
+          // Intelligent zoom: Check for selection and zoom appropriately
+          if (viewer && fabricCanvas) {
+            setTimeout(() => {
+              intelligentZoomForMapSwitch(fabricCanvas, viewer, cleanGeoJson);
+            }, 500); // Small delay to ensure tiles are loaded
+          }
 
           // Update attribution if needed
           updateAttribution(viewType);
@@ -154,8 +169,12 @@ const MapView = () => {
       existingAttribution.remove();
     }
 
-    // Add Mapbox attribution for satellite views
-    if (viewType === "satellite" || viewType === "satellite-streets") {
+    // Add Mapbox attribution for all views (now using Mapbox for everything)
+    if (
+      viewType === "normal" ||
+      viewType === "satellite" ||
+      viewType === "satellite-streets"
+    ) {
       const attribution = document.createElement("div");
       attribution.className = "mapbox-attribution";
       attribution.innerHTML =
@@ -188,10 +207,7 @@ const MapView = () => {
     }
   };
 
-  const currentOption = viewOptions.find(
-    (option) => option.value === currentView
-  );
-
+  
   return (
     <div className="absolute top-4 right-4 z-10">
       <div className="relative">
@@ -199,7 +215,7 @@ const MapView = () => {
         <button
           onClick={() => setIsOpen(!isOpen)}
           disabled={isLoading}
-          className={`flex items-center gap-2 bg-white border border-gray-300 rounded-lg px-3 py-2 shadow-lg hover:bg-gray-50 transition-colors ${
+          className={`flex items-center gap-2 bg-white border border-gray-300 rounded-lg px-3 py-2 shadow-lg hover:bg-gray-50 transition-colors cursor-pointer ${
             isLoading ? "opacity-50 cursor-not-allowed" : ""
           }`}
           aria-label="Map view options"
@@ -218,8 +234,8 @@ const MapView = () => {
 
         {/* Dropdown Menu */}
         {isOpen && !isLoading && (
-          <div className="absolute top-full mt-2 right-0 bg-white border border-gray-200 rounded-lg shadow-xl min-w-[200px] z-20 overflow-hidden">
-            <div className="py-1">
+          <div className="absolute top-full mt-2 right-0 bg-white border border-gray-200 rounded-lg shadow-xl min-w-[140px] z-20 overflow-hidden">
+            <div>
               {viewOptions.map((option) => {
                 const Icon = option.icon;
                 const isSelected = currentView === option.value;
@@ -228,7 +244,7 @@ const MapView = () => {
                   <button
                     key={option.value}
                     onClick={() => handleViewChange(option.value)}
-                    className={`w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-gray-50 transition-colors ${
+                    className={`w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-gray-50 transition-colors cursor-pointer ${
                       isSelected ? "bg-blue-50" : ""
                     }`}
                     aria-selected={isSelected}
@@ -247,12 +263,12 @@ const MapView = () => {
                       >
                         {option.label}
                       </div>
-                      <div className="text-xs text-gray-500 mt-0.5">
-                        {option.description}
-                      </div>
                     </div>
                     {isSelected && (
-                      <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-1.5" />
+                      <div className="relative">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-1.5 relative z-10" />
+                        <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 absolute top-1.5 z-0 animate-ping" />
+                      </div>
                     )}
                   </button>
                 );

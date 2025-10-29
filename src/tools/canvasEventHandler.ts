@@ -288,20 +288,21 @@ export class CanvasEventHandler implements ICanvasEventHandler {
       // Temporary tool switching
       const keyStore = useKeyStore.getState();
 
-      // Space key -> Hand tool
+      // Space key -> Select tool (but not when combined with other shortcuts)
       if ((e.key === " " || e.code === "Space" || e.keyCode === 32) && !keyStore.previousTool && !isEditingText) {
         e.preventDefault();
+        console.log("Select Activated")
         keyStore.setPreviousTool(toolStore.selectedTool);
         if (toolStore.selectedTool !== 'select') {
           toolStore.activateTool(ctx, 'select');
         }
       }
 
-      // Ctrl key -> Select tool (but not when combined with other shortcuts)
+      // Ctrl key -> Hand tool
       if ((e.ctrlKey || e.metaKey) && !keyStore.previousTool &&
         e.key !== 'z' && e.key !== 'y' && e.key !== 'Delete' && e.key !== 'Backspace') {
-
         e.preventDefault();
+        console.log("Hand Activated")
         keyStore.setPreviousTool(toolStore.selectedTool);
         if (toolStore.selectedTool !== 'hand') {
           toolStore.activateTool(ctx, 'hand');
@@ -442,7 +443,7 @@ export class CanvasEventHandler implements ICanvasEventHandler {
       // Restore previous tool when space is released
       if ((e.key === " " || e.code === "Space" || e.keyCode === 32) && keyStore.previousTool) {
         e.preventDefault();
-        if (keyStore.previousTool && keyStore.previousTool !== 'hand') {
+        if (keyStore.previousTool && keyStore.previousTool !== 'select') {
           toolStore.activateTool(ctx, keyStore.previousTool);
           keyStore.setPreviousTool(null);
           keyStore.resetKeyState();
@@ -451,8 +452,9 @@ export class CanvasEventHandler implements ICanvasEventHandler {
 
       // Restore previous tool when ctrl is released (and no other modifiers are active)
       if (!e.ctrlKey && !e.metaKey && keyStore.previousTool) {
+
         e.preventDefault();
-        if (keyStore.previousTool && keyStore.previousTool !== 'select') {
+        if (keyStore.previousTool && keyStore.previousTool !== 'hand') {
           toolStore.activateTool(ctx, keyStore.previousTool);
           keyStore.setPreviousTool(null);
           keyStore.resetKeyState();

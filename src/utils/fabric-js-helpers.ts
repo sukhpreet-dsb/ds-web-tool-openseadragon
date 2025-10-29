@@ -20,31 +20,32 @@ export function initializeFabricOverlay(osdViewer: OpenSeadragon.Viewer) {
   const overlay = osdViewer.fabricOverlay({
     fabricCanvasOptions: CANVAS_OPTIONS,
   });
+  
 
   const canvas = overlay.fabricCanvas();
-   canvas.defaultCursor = 'grab';
-          canvas.hoverCursor = 'grab';  
+  canvas.defaultCursor = 'grab';
+  canvas.hoverCursor = 'grab';
 
-          if (osdViewer && osdViewer.container) {
-          osdViewer.container.style.cursor = 'grab';
+  if (osdViewer && osdViewer.container) {
+    osdViewer.container.style.cursor = 'grab';
 
-          // Add event listeners for grab/grabbing cursor during drag
-          const handleMouseDown = () => {
-            osdViewer.container.style.cursor = 'grabbing';
-          };
+    // Add event listeners for grab/grabbing cursor during drag
+    const handleMouseDown = () => {
+      osdViewer.container.style.cursor = 'grabbing';
+    };
 
-          const handleMouseUp = () => {
-            osdViewer.container.style.cursor = 'grab';
-          };
+    const handleMouseUp = () => {
+      osdViewer.container.style.cursor = 'grab';
+    };
 
-          // Remove existing listeners to avoid duplicates
-          osdViewer.container.removeEventListener('mousedown', handleMouseDown);
-          osdViewer.container.removeEventListener('mouseup', handleMouseUp);
+    // Remove existing listeners to avoid duplicates
+    osdViewer.container.removeEventListener('mousedown', handleMouseDown);
+    osdViewer.container.removeEventListener('mouseup', handleMouseUp);
 
-          // Add new listeners
-          osdViewer.container.addEventListener('mousedown', handleMouseDown);
-          osdViewer.container.addEventListener('mouseup', handleMouseUp);
-        }
+    // Add new listeners
+    osdViewer.container.addEventListener('mousedown', handleMouseDown);
+    osdViewer.container.addEventListener('mouseup', handleMouseUp);
+  }
   return { overlay, canvas };
 }
 
@@ -96,8 +97,8 @@ export function createLineStringFabricObject(
 
   return new fabric.Polyline(points, {
     fill: "transparent",
-    stroke: "blue",
-    strokeWidth: 10,
+    stroke: "red",
+    strokeWidth: 100,
     selectable: false,
     evented: false,
     perPixelTargetFind: false,
