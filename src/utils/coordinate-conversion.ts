@@ -1,6 +1,7 @@
 import OpenSeadragon from "openseadragon";
 import type { Position } from "../types";
 import type { FeatureCollection } from "../types";
+import * as fabric from "fabric";
 
 /**
  * Converts longitude/latitude coordinates to OpenSeadragon coordinate systems

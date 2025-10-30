@@ -111,7 +111,7 @@ export const useToolStore = create<ToolStore>((set, get) => ({
         set({ isDrawingMode: true });
         fabricCanvas.isDrawingMode = true;
         fabricCanvas.freeDrawingBrush = new fabric.PencilBrush(fabricCanvas);
-        fabricCanvas.freeDrawingBrush.width = 5;
+        fabricCanvas.freeDrawingBrush.width = 50;
         fabricCanvas.freeDrawingBrush.color = 'black';
         fabricCanvas.defaultCursor = 'crosshair';
         fabricCanvas.hoverCursor = 'crosshair';
