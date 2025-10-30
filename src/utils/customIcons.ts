@@ -15,10 +15,12 @@ export function createPlusIcon(options: CustomIconOptions): fabric.Group {
   const {
     left,
     top,
-    size = 40,
     color = 'red',
-    strokeWidth = 6
   } = options;
+
+  // Fixed size for plus icon, ignoring the size parameter from options
+  const size = 1200;
+  const strokeWidth = 400;
 
   const halfSize = size / 2;
   const lineLength = size  - 30;
@@ -74,10 +76,12 @@ export function createTriangleIcon(options: CustomIconOptions): fabric.Group {
   const {
     left,
     top,
-    size = 40,
     color = 'grey',
-    strokeWidth = 2
   } = options;
+
+  // Fixed size for triangle icon, ignoring the size parameter from options
+  const size = 1200;
+  const strokeWidth = 40;
 
   const halfSize = size / 2;
   const triangleSize = size * 0.8;
@@ -124,10 +128,11 @@ export function createGpIcon(options: CustomIconOptions): fabric.Group {
   const {
     left,
     top,
-    size = 40,
     color = '#9333EA', // Purple color
-    strokeWidth = 2
   } = options;
+
+  const size = 1200;
+  const strokeWidth = 40;
 
   const halfSize = size / 2;
   const circleRadius = size * 0.4;
@@ -148,9 +153,9 @@ export function createGpIcon(options: CustomIconOptions): fabric.Group {
 
   // Create black dot in center
   const blackDot = new fabric.Circle({
-    left: halfSize - 3,
-    top: halfSize - 3,
-    radius: 3,
+    left: halfSize - 80,
+    top: halfSize - 80,
+    radius: 100,
     fill: '#000000',
     selectable: false,
     evented: false,
@@ -182,10 +187,11 @@ export function createJunctionIcon(options: CustomIconOptions): fabric.Group {
   const {
     left,
     top,
-    size = 40,
     color = '#DC2626', // Red color
-    strokeWidth = 2
   } = options;
+
+  const size = 1200;
+  const strokeWidth = 40;
 
   const halfSize = size / 2;
   const boxSize = size * 0.6;
@@ -207,9 +213,9 @@ export function createJunctionIcon(options: CustomIconOptions): fabric.Group {
 
   // Create black dot in center
   const blackDot = new fabric.Circle({
-    left: halfSize - 3,
-    top: halfSize - 3,
-    radius: 3,
+    left: halfSize - 80,
+    top: halfSize - 80,
+    radius: 100,
     fill: '#000000',
     selectable: false,
     evented: false,
@@ -241,10 +247,12 @@ export function createTowerIcon(options: CustomIconOptions): fabric.Group {
   const {
     left,
     top,
-    size = 80,
     color = "#000000",
     strokeWidth = 1,
   } = options;
+
+  // Fixed size for tower icon, ignoring the size parameter from options
+  const size = 2000;
 
   const scale = size / 15; // SVG viewBox is 0 0 15 15
 

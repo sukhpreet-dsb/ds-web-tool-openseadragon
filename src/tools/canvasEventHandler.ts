@@ -482,10 +482,10 @@ export class CanvasEventHandler implements ICanvasEventHandler {
     if (!ctx.fabricCanvas) return;
 
     const pointer = ctx.fabricCanvas.getScenePoint(e.e);
-    const text = new fabric.IText('Click to edit', {
+    const text = new fabric.IText('dbl click to edit', {
       left: pointer.x,
       top: pointer.y,
-      fontSize: 40,
+      fontSize: 1200,
       fill: 'black',
       selectable: true,
       editable: true,
@@ -879,7 +879,7 @@ export class CanvasEventHandler implements ICanvasEventHandler {
             setTimeout(() => {
               ctx.fabricCanvas!.renderAll();
               resolve();
-            }, 50);
+            }, 150);
           } catch (error) {
             reject(error);
           }
@@ -969,19 +969,7 @@ export class CanvasEventHandler implements ICanvasEventHandler {
 
     // Remove all event listeners if canvas exists
     if (ctx.fabricCanvas) {
-      ctx.fabricCanvas.off('mouse:down');
-      ctx.fabricCanvas.off('mouse:move');
-      ctx.fabricCanvas.off('mouse:up');
-      ctx.fabricCanvas.off('selection:created');
-      ctx.fabricCanvas.off('selection:updated');
-      ctx.fabricCanvas.off('selection:cleared');
-      ctx.fabricCanvas.off('object:moving');
-      ctx.fabricCanvas.off('object:scaling');
-      ctx.fabricCanvas.off('object:rotating');
-      ctx.fabricCanvas.off('object:modified');
-      ctx.fabricCanvas.off('object:added');
-      ctx.fabricCanvas.off('object:removed');
-      ctx.fabricCanvas.off('path:created');
+      ctx.fabricCanvas.removeListeners()
     }
 
 
