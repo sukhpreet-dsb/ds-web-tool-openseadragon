@@ -1,6 +1,6 @@
-import { pgliteStorage } from '@/services/pgliteKV';
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { pgliteStorage } from "@/services/pgliteKV";
+import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
 
 const MAX_HISTORY = 50; // Limit history to prevent memory issues
 
@@ -35,7 +35,9 @@ export interface CanvasHistoryActions {
   waitForHydration: () => Promise<void>;
 }
 
-export interface CanvasHistoryStore extends CanvasHistoryState, CanvasHistoryActions {}
+export interface CanvasHistoryStore
+  extends CanvasHistoryState,
+    CanvasHistoryActions {}
 
 // Global promise to track hydration completion
 let hydrationPromise: Promise<void> | null = null;
@@ -125,14 +127,21 @@ const canvasStoreCreator = persist<CanvasHistoryStore>(
     },
   }),
   {
-    name: 'canvas-history', // Key for local storage
+    name: "canvas-history", // Key for local storage
     // storage: createJSONStorage(() => localStorage), // Use localStorage
-    storage: createJSONStorage(() => pgliteStorage),
+    storage: createJSONStorage(() => {
+      if (import.meta.env.VITE_ENV === "dev") {
+        return localStorage;
+      } else {
+        return pgliteStorage;
+      }
+    }),
     // Only persist these parts of the state
-    partialize: (state: any) => ({
-      history: state.history,
-      currentIndex: state.currentIndex,
-    }) as any,
+    partialize: (state: any) =>
+      ({
+        history: state.history,
+        currentIndex: state.currentIndex,
+      } as any),
     // Handle rehydration completion
     onRehydrateStorage: () => () => {
       // Resolve the hydration promise
@@ -145,4 +154,6 @@ const canvasStoreCreator = persist<CanvasHistoryStore>(
   }
 );
 
-export const useCanvasStore = create<CanvasHistoryStore>()(canvasStoreCreator as any);
+export const useCanvasStore = create<CanvasHistoryStore>()(
+  canvasStoreCreator as any
+);

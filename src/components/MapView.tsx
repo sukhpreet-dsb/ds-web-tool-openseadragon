@@ -64,7 +64,7 @@ const MapView = () => {
 
     try {
       const savedZoom = viewer.viewport.getZoom();
-      let savedCenter = viewer.viewport.getCenter();
+      const savedCenter = viewer.viewport.getCenter();
       viewer.addOnceHandler('open', () => {
         viewer.viewport.zoomTo(savedZoom, savedCenter, true);
         viewer.viewport.panTo(savedCenter, true);
