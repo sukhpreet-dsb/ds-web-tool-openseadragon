@@ -7,7 +7,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { TOOLS } from "@/tools/toolConfig";
-import { CircleQuestionMark } from "lucide-react";
+import { CircleQuestionMark, Camera } from "lucide-react";
 
 const shortcuts = [
   { title: "Copy", value: "ctrl c", symbol: "+" },
@@ -17,6 +17,7 @@ const shortcuts = [
   { title: "Select", value: "hold space" },
   { title: "Move", value: "hold ctrl" },
   { title: "Delete", value: "backspace delete", symbol: "or" },
+  { title: "Screenshot", value: "click camera icon", custom: true },
 ];
 
 export function HelpModal() {
@@ -68,13 +69,24 @@ export function HelpModal() {
                       >
                         <span className="text-zinc-800">{shortcut.title}</span>{" "}
                         <span className="flex gap-2 text-zinc-600">
-                          <span className="bg-[#e0dfff] px-2 py-0.5 rounded-sm">
-                            {shortcut.value.split(" ")[0]}
-                          </span>
-                          {shortcut.symbol && <span>{shortcut.symbol}</span>}
-                          <span className="bg-[#e0dfff] px-2 py-0.5 rounded-sm">
-                            {shortcut.value.split(" ")[1]}
-                          </span>
+                          {shortcut.custom ? (
+                            <span className="flex items-center gap-2">
+                              <Camera size={16} />
+                              <span className="text-sm">{shortcut.value}</span>
+                            </span>
+                          ) : (
+                            <>
+                              <span className="bg-[#e0dfff] px-2 py-0.5 rounded-sm">
+                                {shortcut.value.split(" ")[0]}
+                              </span>
+                              {shortcut.symbol && <span>{shortcut.symbol}</span>}
+                              {shortcut.value.split(" ")[1] && (
+                                <span className="bg-[#e0dfff] px-2 py-0.5 rounded-sm">
+                                  {shortcut.value.split(" ")[1]}
+                                </span>
+                              )}
+                            </>
+                          )}
                         </span>
                       </li>
                     ))}

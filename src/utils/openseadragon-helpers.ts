@@ -11,6 +11,7 @@ export function createOpenSeadragonViewer(containerElement: HTMLElement) {
     wrapHorizontal: true,
     zoomPerScroll: 1.2,
     minZoomImageRatio: 0.5,
+     crossOriginPolicy:"Anonymous",
     showRotationControl: true,
     tileSources: [
       {
